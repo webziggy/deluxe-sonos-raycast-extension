@@ -1,0 +1,156 @@
+import {
+  createConnection,
+  createLongLivedTokenAuth,
+  subscribeEntities,
+  HassEntities,
+  Connection,
+  ERR_CANNOT_CONNECT,
+  ERR_INVALID_AUTH
+} from "home-assistant-js-websocket";
+import WebSocket from "ws";
+import { getPreferenceValues } from "@raycast/api";
+
+(global as any).WebSocket = WebSocket;
+
+export interface Preferences {
+  haUrl: string;
+  haToken: string;
+  defaultSpeaker?: string;
+  includeEntities?: string;
+  flashTrackName?: boolean;
+}
+
+let connectionPromise: Promise<Connection> | null = null;
+
+export async function getHAConnection(): Promise<Connection> {
+  if (connectionPromise) {
+    return connectionPromise;
+  }
+
+  const preferences = getPreferenceValues<Preferences>();
+  const baseUrl = preferences.haUrl.trim().replace(/\/+$/, "");
+  const auth = createLongLivedTokenAuth(baseUrl, preferences.haToken);
+  
+  connectionPromise = createConnection({ auth }).catch((err) => {
+    connectionPromise = null;
+    if (err === ERR_CANNOT_CONNECT) {
+      throw new Error(`Cannot connect to Home Assistant at ${baseUrl}. Check your URL and network.`);
+    }
+    if (err === ERR_INVALID_AUTH) {
+      throw new Error("Invalid Long-Lived Access Token.");
+    }
+    throw new Error(`Connection failed: ${err}`);
+  });
+  
+  return connectionPromise;
+}
+
+export async function callService(domain: string, service: string, serviceData: Record<string, any> = {}) {
+  const connection = await getHAConnection();
+  return connection.sendMessagePromise({
+    type: "call_service",
+    domain,
+    service,
+    service_data: serviceData
+  });
+}
+
+export async function fetchFavourites(entityId: string) {
+  const connection = await getHAConnection();
+  return connection.sendMessagePromise({
+    type: "media_player/browse_media",
+    entity_id: entityId,
+    media_content_type: "favorites",
+    media_content_id: ""
+  });
+}
+
+export async function fetchQueue(entityId: string) {
+  const connection = await getHAConnection();
+  return connection.sendMessagePromise({
+    type: "call_service",
+    domain: "sonos",
+    service: "get_queue",
+    target: {
+      entity_id: entityId
+    },
+    return_response: true
+  });
+}
+
+export function getFullImageUrl(path?: string): string {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  const preferences = getPreferenceValues<Preferences>();
+  const baseUrl = preferences.haUrl.trim().replace(/\/+$/, "");
+  return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
+export function filterSonosPlayers(entities: HassEntities) {
+  const prefs = getPreferenceValues<Preferences>();
+  const allowedIds = prefs.includeEntities 
+    ? prefs.includeEntities.split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
+    : [];
+
+  return Object.values(entities).filter((e) => {
+    if (!e.entity_id.startsWith("media_player.")) return false;
+    if (allowedIds.length > 0) return allowedIds.includes(e.entity_id.toLowerCase());
+    
+    // Heuristic: Sonos players usually have group_members or source_list
+    return e.attributes?.group_members !== undefined || 
+           e.attributes?.source_list !== undefined ||
+           e.attributes?.is_volume_muted !== undefined;
+  });
+}
+
+export function sortPlayers(players: any[]) {
+  const prefs = getPreferenceValues<Preferences>();
+  const defaultId = prefs.defaultSpeaker?.trim().toLowerCase();
+  
+  if (!defaultId) return players;
+  
+  return [...players].sort((a, b) => {
+    if (a.entity_id.toLowerCase() === defaultId) return -1;
+    if (b.entity_id.toLowerCase() === defaultId) return 1;
+    return 0;
+  });
+}
+
+export function getGroupedPlayers(players: any[]) {
+  const groups = new Map<string, { coordinator: any, members: any[] }>();
+  
+  players.forEach(p => {
+    const groupMembers = p.attributes?.group_members || [p.entity_id];
+    const coordinatorId = groupMembers[0];
+    
+    if (!groups.has(coordinatorId)) {
+      groups.set(coordinatorId, { coordinator: null, members: [] });
+    }
+    
+    const group = groups.get(coordinatorId)!;
+    if (p.entity_id === coordinatorId) {
+      group.coordinator = p;
+    }
+    group.members.push(p);
+  });
+  
+  return Array.from(groups.values())
+    .filter(g => g.coordinator)
+    .map(g => {
+      const coordinatorName = g.coordinator.attributes?.friendly_name || g.coordinator.entity_id;
+      const memberNames = g.members
+        .filter(m => m.entity_id !== g.coordinator.entity_id)
+        .map(m => m.attributes?.friendly_name || m.entity_id);
+        
+      const groupName = memberNames.length > 0 
+        ? `${coordinatorName} (+ ${memberNames.join(", ")})` 
+        : coordinatorName;
+        
+      return {
+        ...g.coordinator,
+        groupName,
+        isGroup: memberNames.length > 0,
+        groupMembers: g.members
+      };
+    });
+}

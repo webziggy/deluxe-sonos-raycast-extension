@@ -1,0 +1,88 @@
+{
+  "$schema": "https://www.raycast.com/downloads/extension.schema.json",
+  "name": "sonos-ha-controller",
+  "title": "Sonos Controller for Home Assistant",
+  "description": "Control your Sonos system via Home Assistant",
+  "icon": "command-icon.png",
+  "author": "alano",
+  "categories": [
+    "Media"
+  ],
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "index",
+      "title": "Sonos Menu",
+      "description": "Sonos Menu Bar Controller",
+      "mode": "menu-bar"
+    },
+    {
+      "name": "favourites",
+      "title": "Sonos Favourites",
+      "description": "Browse and play Sonos favourites",
+      "mode": "view"
+    },
+    {
+      "name": "queue",
+      "title": "Sonos Queue",
+      "description": "View and manage the current playback queue",
+      "mode": "view"
+    }
+  ],
+  "preferences": [
+    {
+      "name": "haUrl",
+      "type": "textfield",
+      "required": true,
+      "title": "Home Assistant URL",
+      "description": "The URL of your Home Assistant instance",
+      "placeholder": "http://homeassistant.local:8123"
+    },
+    {
+      "name": "haToken",
+      "type": "password",
+      "required": true,
+      "title": "Long-Lived Access Token",
+      "description": "Your Home Assistant long-lived access token"
+    },
+    {
+      "name": "includeEntities",
+      "type": "textfield",
+      "required": false,
+      "title": "Include Only These Entities",
+      "description": "Comma-separated list of media_player entity IDs to include. Leave blank for auto-detect.",
+      "placeholder": "media_player.loungesonos, media_player.bedroomsonos"
+    },
+    {
+      "name": "flashTrackName",
+      "type": "checkbox",
+      "required": false,
+      "label": "Flash track name on change",
+      "title": "Menu Bar Appearance",
+      "description": "Briefly show the track name in the Mac menu bar when a new song starts playing.",
+      "default": true
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.79.0",
+    "@raycast/utils": "^1.16.3",
+    "home-assistant-js-websocket": "^9.3.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^1.0.8",
+    "@types/node": "20.8.10",
+    "@types/react": "18.3.3",
+    "@types/ws": "^8.5.11",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5"
+  },
+  "scripts": {
+    "build": "ray build -e dist",
+    "dev": "ray develop",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
+    "publish": "npx @raycast/api@latest publish"
+  }
+}
