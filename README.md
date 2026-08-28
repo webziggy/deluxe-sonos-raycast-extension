@@ -2,7 +2,6 @@
 
 A native, blazing-fast Raycast extension to seamlessly control your Sonos ecosystem via Home Assistant.
 
-<img width="800" src="https://raycast.com/uploads/commands/media-player.png" alt="Deluxe Sonos Controller" />
 
 ## Features
 
