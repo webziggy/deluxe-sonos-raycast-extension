@@ -25,7 +25,10 @@ export default function Command() {
   
   const [isLoading, setIsLoading] = useState(!cache.has("entities"));
   const [error, setError] = useState<string>();
-  const [menuTitle, setMenuTitle] = useState("Sonos");
+
+  // Use absolute time to avoid macOS App Nap freezing our timers
+  const [now, setNow] = useState(Date.now());
+  const [trackStartTime, setTrackStartTime] = useState(Date.now());
 
   useEffect(() => {
     let unsubscribe: () => void;
@@ -75,26 +78,37 @@ export default function Command() {
     ? [primaryPlayer.attributes?.media_title, primaryPlayer.attributes?.media_artist].filter(Boolean).join(" - ")
     : null;
 
+  // Reset track start time when track changes so the marquee and flash timer reset
   useEffect(() => {
-    if (!currentTrack) {
-      setMenuTitle("Sonos");
-      return;
-    }
+    setTrackStartTime(Date.now());
+  }, [currentTrack]);
+
+  // Tick every 1 second to update the marquee offset and flash timer
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Compute the menu title dynamically based on time (immune to freezing)
+  let menuTitle = "Sonos";
+  if (currentTrack) {
+    const flashDurationMs = 12000; // 12 seconds so it has time to scroll a bit
+    const isFlashing = prefs.flashTrackName !== false && (now - trackStartTime < flashDurationMs);
     
-    if (pinTrackName) {
-      setMenuTitle(`▶ ${currentTrack}`);
-    } else {
-      if (prefs.flashTrackName !== false) {
-        setMenuTitle(`▶ ${currentTrack}`);
-        const timer = setTimeout(() => {
-          setMenuTitle("Sonos");
-        }, 5000);
-        return () => clearTimeout(timer);
+    if (pinTrackName || isFlashing) {
+      const displayLength = 15; // Max characters to take up less width
+      if (currentTrack.length <= displayLength) {
+        menuTitle = `▶ ${currentTrack}`;
       } else {
-        setMenuTitle("Sonos");
+        // HiFi Marquee logic
+        const paddedTrack = `${currentTrack}   ***   `;
+        // Shift by 1 character every second
+        const offset = Math.floor((now - trackStartTime) / 1000) % paddedTrack.length;
+        const visibleText = (paddedTrack + paddedTrack).substring(offset, offset + displayLength);
+        menuTitle = `▶ ${visibleText}`;
       }
     }
-  }, [currentTrack, pinTrackName, prefs.flashTrackName]);
+  }
 
   const handlePlayPause = async (entityId: string) => {
     await callService("media_player", "media_play_pause", { entity_id: entityId });
