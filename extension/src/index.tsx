@@ -196,6 +196,12 @@ export default function Command() {
     }
   };
 
+  const handleToggleMute = async (members: any[], isCurrentlyMuted: boolean) => {
+    for (const member of members) {
+      await callService("media_player", "volume_mute", { entity_id: member.entity_id, is_volume_muted: !isCurrentlyMuted });
+    }
+  };
+
   const handleSelectSource = async (entityId: string, source: string) => {
     await callService("media_player", "select_source", { entity_id: entityId, source });
   };
@@ -230,6 +236,7 @@ export default function Command() {
     const sourceList: string[] = player.attributes?.source_list || [];
     
     const avgVolume = player.groupMembers.reduce((sum: number, m: any) => sum + (m.attributes?.volume_level || 0), 0) / player.groupMembers.length;
+    const isMuted = player.groupMembers.some((m: any) => m.attributes?.is_volume_muted);
     
     const maxLen = 60;
     let fullNowPlaying = "Idle";
@@ -289,6 +296,12 @@ export default function Command() {
 
         <MenuBarExtra.Section title={`Group Volume (${Math.round(avgVolume * 100)}%)`}>
           <MenuBarExtra.Item 
+            title={isMuted ? "Unmute" : "Mute"} 
+            icon={isMuted ? Icon.SpeakerOn : Icon.SpeakerOff}
+            shortcut={isRoot ? { modifiers: ["cmd"], key: "m" } : undefined}
+            onAction={() => handleToggleMute(player.groupMembers, isMuted)} 
+          />
+          <MenuBarExtra.Item 
             title="Volume +5%" 
             icon={Icon.SpeakerUp}
             shortcut={isRoot ? { modifiers: ["cmd"], key: "+" } : undefined}
@@ -301,14 +314,18 @@ export default function Command() {
             onAction={() => handleVolumeChange(player.groupMembers, -0.05)} 
           />
           <MenuBarExtra.Submenu title="Set Exact Volume" icon={Icon.Speaker}>
-            <MenuBarExtra.Item title="Mute (0%)" onAction={() => handleSetExactVolume(player.groupMembers, 0)} />
-            {Array.from({ length: 100 }, (_, i) => i + 1).map(vol => (
-              <MenuBarExtra.Item 
-                key={vol} 
-                title={`${vol}%`} 
-                onAction={() => handleSetExactVolume(player.groupMembers, vol / 100)} 
-              />
+            {Array.from({ length: 10 }, (_, i) => i * 10).map(tens => (
+              <MenuBarExtra.Submenu key={tens} title={`${tens}% - ${tens + 9}%`}>
+                {Array.from({ length: 10 }, (_, i) => tens + i).map(vol => (
+                  <MenuBarExtra.Item 
+                    key={vol} 
+                    title={`${vol}%`} 
+                    onAction={() => handleSetExactVolume(player.groupMembers, vol / 100)} 
+                  />
+                ))}
+              </MenuBarExtra.Submenu>
             ))}
+            <MenuBarExtra.Item title="100%" onAction={() => handleSetExactVolume(player.groupMembers, 1)} />
           </MenuBarExtra.Submenu>
         </MenuBarExtra.Section>
 
