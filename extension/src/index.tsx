@@ -258,6 +258,28 @@ export default function Command() {
           />
         </MenuBarExtra.Section>
 
+        {isRoot && trackHistory.length > 0 && (
+          <MenuBarExtra.Section>
+            <MenuBarExtra.Submenu title="Recently Played" icon={Icon.Clock}>
+              {trackHistory.map((item, i) => {
+                const displayLines = wrapText(item.track, 60);
+                return (
+                  <MenuBarExtra.Section key={i}>
+                    {displayLines.map((line, lineIdx) => (
+                      <MenuBarExtra.Item 
+                        key={`${i}-${lineIdx}`}
+                        title={line} 
+                        subtitle={lineIdx === 0 ? new Date(item.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : undefined} 
+                        onAction={() => open(`https://www.google.com/search?q=${encodeURIComponent(item.track)}`)}
+                      />
+                    ))}
+                  </MenuBarExtra.Section>
+                );
+              })}
+            </MenuBarExtra.Submenu>
+          </MenuBarExtra.Section>
+        )}
+
         <MenuBarExtra.Section title={`Group Volume (${Math.round(avgVolume * 100)}%)`}>
           <MenuBarExtra.Item 
             title={isMuted ? "Unmute" : "Mute"} 
@@ -357,28 +379,6 @@ export default function Command() {
       {otherPlayers.length > 0 && (
         <MenuBarExtra.Section title={defaultPlayer ? "Other Speakers" : "Speakers"}>
           {otherPlayers.map(p => renderPlayerControls(p, false))}
-        </MenuBarExtra.Section>
-      )}
-      
-      {trackHistory.length > 0 && (
-        <MenuBarExtra.Section>
-          <MenuBarExtra.Submenu title="Recently Played" icon={Icon.Clock}>
-            {trackHistory.map((item, i) => {
-              const displayLines = wrapText(item.track, 60);
-              return (
-                <Fragment key={i}>
-                  {displayLines.map((line, lineIdx) => (
-                    <MenuBarExtra.Item 
-                      key={`${i}-${lineIdx}`}
-                      title={line} 
-                      subtitle={lineIdx === 0 ? new Date(item.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : undefined} 
-                      onAction={() => open(`https://www.google.com/search?q=${encodeURIComponent(item.track)}`)}
-                    />
-                  ))}
-                </Fragment>
-              );
-            })}
-          </MenuBarExtra.Submenu>
         </MenuBarExtra.Section>
       )}
       
