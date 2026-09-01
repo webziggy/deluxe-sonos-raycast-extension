@@ -264,7 +264,7 @@ export default function Command() {
   };
 
   return (
-    <MenuBarExtra icon="🎵" isLoading={isLoading} title={menuTitle}>
+    <MenuBarExtra icon={Icon.Music} isLoading={isLoading} title={menuTitle}>
       {allPlayers.length === 0 && !isLoading && (
         <MenuBarExtra.Item title="No Sonos players found" />
       )}
