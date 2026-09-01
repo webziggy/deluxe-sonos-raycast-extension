@@ -198,10 +198,15 @@ export default function Command() {
     
     const avgVolume = player.groupMembers.reduce((sum: number, m: any) => sum + (m.attributes?.volume_level || 0), 0) / player.groupMembers.length;
     
+    const maxLen = 60;
+    let fullNowPlaying = "Idle";
     let nowPlaying = "Idle";
+    
     if (state === "playing" || state === "paused") {
-      nowPlaying = [mediaTitle, mediaArtist].filter(Boolean).join(" - ") || "Unknown Media";
+      fullNowPlaying = [mediaTitle, mediaArtist].filter(Boolean).join(" - ") || "Unknown Media";
+      nowPlaying = fullNowPlaying.length > maxLen ? fullNowPlaying.substring(0, maxLen - 3) + "..." : fullNowPlaying;
     } else if (state === "unavailable" || state === "unknown") {
+      fullNowPlaying = "Offline";
       nowPlaying = "Offline";
     }
 
@@ -216,7 +221,7 @@ export default function Command() {
     const content = (
       <>
         {isRoot && <MenuBarExtra.Item title={title} icon={Icon.Speaker} />}
-        <MenuBarExtra.Item title={nowPlaying} icon={isRoot ? stateIcon : undefined} />
+        <MenuBarExtra.Item title={nowPlaying} tooltip={fullNowPlaying} icon={isRoot ? stateIcon : undefined} />
         {!isRoot && <MenuBarExtra.Item title={`State: ${state}`} />}
         
         <MenuBarExtra.Section title="Controls">
@@ -309,13 +314,17 @@ export default function Command() {
       {trackHistory.length > 0 && (
         <MenuBarExtra.Section>
           <MenuBarExtra.Submenu title="Recently Played" icon={Icon.Clock}>
-            {trackHistory.map((item, i) => (
-              <MenuBarExtra.Item 
-                key={i} 
-                title={item.track} 
-                subtitle={new Date(item.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 
-              />
-            ))}
+            {trackHistory.map((item, i) => {
+              const displayTitle = item.track.length > 60 ? item.track.substring(0, 57) + "..." : item.track;
+              return (
+                <MenuBarExtra.Item 
+                  key={i} 
+                  title={displayTitle} 
+                  tooltip={item.track}
+                  subtitle={new Date(item.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 
+                />
+              );
+            })}
           </MenuBarExtra.Submenu>
         </MenuBarExtra.Section>
       )}
