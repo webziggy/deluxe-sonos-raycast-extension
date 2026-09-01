@@ -1,5 +1,5 @@
 import { MenuBarExtra, openCommandPreferences, Icon, Cache, getPreferenceValues, showHUD } from "@raycast/api";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { callService, Preferences } from "./api";
 import { useSonosPlayers } from "./useSonosPlayers";
 
@@ -49,34 +49,46 @@ export default function Command() {
     try { return JSON.parse(cache.get("trackHistory") || "[]"); } catch (e) { return []; }
   });
 
-  // Reset track start time when track changes and record history
+  const lastTracksRef = useRef<Record<string, string>>({});
+
+  // Monitor ALL speakers for track changes to trigger HUD and History
+  useEffect(() => {
+    let triggeredChange = false;
+
+    for (const player of allPlayers) {
+      const trackString = player.state === "playing" 
+        ? [player.attributes?.media_title, player.attributes?.media_artist].filter(Boolean).join(" - ")
+        : "";
+
+      if (trackString && trackString !== lastTracksRef.current[player.entity_id]) {
+        // Track changed for this specific player!
+        if (showHUDAlert) {
+          showHUD(`[${player.groupName}] ▶ ${trackString}`);
+        }
+
+        const historyEntry = `[${player.groupName}] ${trackString}`;
+        
+        setTrackHistory(prev => {
+          // Prevent rapid back-to-back duplicates for the same speaker
+          if (prev.length > 0 && prev[0].track === historyEntry) {
+            return prev;
+          }
+          const newHistory = [{ track: historyEntry, timestamp: Date.now() }, ...prev];
+          const trimmedHistory = newHistory.slice(0, 10);
+          cache.set("trackHistory", JSON.stringify(trimmedHistory));
+          return trimmedHistory;
+        });
+
+        triggeredChange = true;
+      }
+      lastTracksRef.current[player.entity_id] = trackString;
+    }
+  }, [allPlayers, showHUDAlert]);
+
+  // Reset track start time when the PRIMARY track changes (for the Menu Bar flash)
   useEffect(() => {
     setTrackStartTime(Date.now());
-    
-    if (currentTrack) {
-      setTrackHistory(prev => {
-        // Prevent back-to-back duplicates (e.g. from rapid pauses/plays)
-        if (prev.length > 0 && prev[0].track === currentTrack) {
-          return prev;
-        }
-        
-        // Trigger HUD Alert on new track
-        if (showHUDAlert) {
-          showHUD(`▶ ${currentTrack}`);
-        }
-        
-        const newHistory = [
-          { track: currentTrack, timestamp: Date.now() },
-          ...prev
-        ];
-        
-        // Garbage collection: keep only the last 10 tracks
-        const trimmedHistory = newHistory.slice(0, 10);
-        cache.set("trackHistory", JSON.stringify(trimmedHistory));
-        return trimmedHistory;
-      });
-    }
-  }, [currentTrack, showHUDAlert]);
+  }, [currentTrack]);
 
   const flashDurationMs = 12000;
   const isFlashing = prefs.flashTrackName !== false && (now - trackStartTime < flashDurationMs);
