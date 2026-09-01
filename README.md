@@ -8,9 +8,11 @@ A native, blazing-fast Raycast extension to seamlessly control your Sonos ecosys
 - **🎵 Menu Bar Controller**: A native macOS menu bar dropdown for instantly controlling your pinned default speaker.
 - **🖼️ Rich Favourites Grid**: A beautiful Raycast Grid view that pulls in your Sonos radio stations and Spotify playlists with high-res album artwork.
 - **📋 Live Playback Queue**: A detailed List view showing the current playback queue for any speaker, with the ability to jump to tracks or remove them instantly.
-- **🤝 Intelligent Grouping**: Automatically detects Sonos grouped speakers, consolidates their UI, and scales group volume simultaneously.
-- **📌 Pinned Speakers & Tracks**: Pin your favorite speaker to the root of the menu bar, and optionally pin the currently playing track name right into your Mac's menu bar text!
-- **🚀 Zero Polling**: Uses a highly optimized WebSocket connection to Home Assistant for instant push-updates with near-zero CPU footprint.
+- **🤝 Intelligent Grouping**: Automatically detects grouped speakers, providing master controls alongside fully independent volume overrides for each member.
+- **📌 Pinned Speakers**: Pin your favorite speaker to the root of the menu bar for instant access.
+- **🕒 Contextual Track History**: Every speaker maintains its own dedicated "Recently Played" history right inside its sub-menu.
+- **🔍 Instant Web Search**: Click any currently playing track or history item to instantly look it up in your default browser.
+- **🚀 Zero Polling**: Uses a highly optimized WebSocket connection to Home Assistant for instant push-updates.
 
 ## Setup Instructions
 
@@ -35,11 +37,12 @@ By default, the extension uses an intelligent heuristic (looking for \`group_mem
 
 ## Keyboard Shortcuts (Menu Bar)
 When the Sonos Menu Bar is open, you can use the following quick hotkeys:
-- **Play/Pause**: \`Cmd + P\`
-- **Next Track**: \`Cmd + Right Arrow\`
-- **Previous Track**: \`Cmd + Left Arrow\`
-- **Volume Up**: \`Cmd + +\`
-- **Volume Down**: \`Cmd + -\`
+- **Play/Pause**: `Cmd + P`
+- **Next Track**: `Cmd + Right Arrow`
+- **Previous Track**: `Cmd + Left Arrow`
+- **Volume Up**: `Cmd + +`
+- **Volume Down**: `Cmd + -`
+- **Toggle Mute**: `Cmd + M`
 
 ---
 Built with ❤️ using the official Raycast API and the \`home-assistant-js-websocket\` library.
