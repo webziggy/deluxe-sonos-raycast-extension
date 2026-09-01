@@ -40,9 +40,32 @@ export default function Command() {
     ? [primaryPlayer.attributes?.media_title, primaryPlayer.attributes?.media_artist].filter(Boolean).join(" - ")
     : null;
 
-  // Reset track start time when track changes
+  const [trackHistory, setTrackHistory] = useState<{track: string, timestamp: number}[]>(() => {
+    try { return JSON.parse(cache.get("trackHistory") || "[]"); } catch (e) { return []; }
+  });
+
+  // Reset track start time when track changes and record history
   useEffect(() => {
     setTrackStartTime(Date.now());
+    
+    if (currentTrack) {
+      setTrackHistory(prev => {
+        // Prevent back-to-back duplicates (e.g. from rapid pauses/plays)
+        if (prev.length > 0 && prev[0].track === currentTrack) {
+          return prev;
+        }
+        
+        const newHistory = [
+          { track: currentTrack, timestamp: Date.now() },
+          ...prev
+        ];
+        
+        // Garbage collection: keep only the last 10 tracks
+        const trimmedHistory = newHistory.slice(0, 10);
+        cache.set("trackHistory", JSON.stringify(trimmedHistory));
+        return trimmedHistory;
+      });
+    }
   }, [currentTrack]);
 
   const flashDurationMs = 12000;
@@ -221,6 +244,20 @@ export default function Command() {
       {otherPlayers.length > 0 && (
         <MenuBarExtra.Section title={defaultPlayer ? "Other Speakers" : "Speakers"}>
           {otherPlayers.map(p => renderPlayerControls(p, false))}
+        </MenuBarExtra.Section>
+      )}
+      
+      {trackHistory.length > 0 && (
+        <MenuBarExtra.Section>
+          <MenuBarExtra.Submenu title="Recently Played" icon={Icon.Clock}>
+            {trackHistory.map((item, i) => (
+              <MenuBarExtra.Item 
+                key={i} 
+                title={item.track} 
+                subtitle={new Date(item.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 
+              />
+            ))}
+          </MenuBarExtra.Submenu>
         </MenuBarExtra.Section>
       )}
       
