@@ -1,4 +1,4 @@
-import { MenuBarExtra, openCommandPreferences, Icon, Cache, getPreferenceValues, showHUD } from "@raycast/api";
+import { MenuBarExtra, openCommandPreferences, Icon, Cache, getPreferenceValues, showHUD, open } from "@raycast/api";
 import { useEffect, useState, useRef, Fragment } from "react";
 import { callService, Preferences } from "./api";
 import { useSonosPlayers } from "./useSonosPlayers";
@@ -232,6 +232,7 @@ export default function Command() {
             key={`nowPlaying-${index}`}
             title={line} 
             icon={isRoot ? (index === 0 ? stateIcon : transparentIcon) : undefined} 
+            onAction={fullNowPlaying !== "Idle" && fullNowPlaying !== "Offline" ? () => open(`https://www.google.com/search?q=${encodeURIComponent(fullNowPlaying)}`) : undefined}
           />
         ))}
         {!isRoot && <MenuBarExtra.Item title={`State: ${state}`} />}
@@ -371,6 +372,7 @@ export default function Command() {
                       key={`${i}-${lineIdx}`}
                       title={line} 
                       subtitle={lineIdx === 0 ? new Date(item.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : undefined} 
+                      onAction={() => open(`https://www.google.com/search?q=${encodeURIComponent(item.track)}`)}
                     />
                   ))}
                 </Fragment>
