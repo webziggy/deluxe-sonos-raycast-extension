@@ -18,6 +18,7 @@ export interface Preferences {
   defaultSpeaker?: string;
   includeEntities?: string;
   flashTrackName?: boolean;
+  showHudOnTrackChange?: boolean;
 }
 
 let connectionPromise: Promise<Connection> | null = null;

@@ -15,7 +15,9 @@ type ExtensionPreferences = {
   /** Include Only These Entities - Comma-separated list of media_player entity IDs to include. Leave blank for auto-detect. */
   "includeEntities"?: string,
   /** Menu Bar Appearance - Briefly show the track name in the Mac menu bar when a new song starts playing. */
-  "flashTrackName": boolean
+  "flashTrackName": boolean,
+  /** Notifications - Show a brief Heads Up Display overlay when a new track starts. */
+  "showHudOnTrackChange": boolean
 }
 
 /** Preferences accessible in all the extension's commands */

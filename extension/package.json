@@ -61,6 +61,15 @@
       "title": "Menu Bar Appearance",
       "description": "Briefly show the track name in the Mac menu bar when a new song starts playing.",
       "default": true
+    },
+    {
+      "name": "showHudOnTrackChange",
+      "type": "checkbox",
+      "required": false,
+      "label": "Show HUD on track change",
+      "title": "Notifications",
+      "description": "Show a brief Heads Up Display overlay when a new track starts.",
+      "default": false
     }
   ],
   "dependencies": {

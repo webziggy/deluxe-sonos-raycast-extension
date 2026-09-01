@@ -1,4 +1,4 @@
-import { MenuBarExtra, openCommandPreferences, Icon, Cache, getPreferenceValues } from "@raycast/api";
+import { MenuBarExtra, openCommandPreferences, Icon, Cache, getPreferenceValues, showHUD } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { callService, Preferences } from "./api";
 import { useSonosPlayers } from "./useSonosPlayers";
@@ -10,7 +10,12 @@ export default function Command() {
   
   const [pinnedSpeaker, setPinnedSpeaker] = useState<string | undefined>(cache.get("pinnedSpeaker"));
   const [pinTrackName, setPinTrackName] = useState<boolean>(cache.get("pinTrackName") === "true");
-  
+  const [showHUDAlert, setShowHUDAlert] = useState<boolean>(() => {
+    const cached = cache.get("showHUDAlert");
+    if (cached !== undefined) return cached === "true";
+    return prefs.showHudOnTrackChange === true;
+  });
+
   const { players: allPlayers, isLoading, error } = useSonosPlayers();
 
   // Use absolute time to avoid macOS App Nap freezing our timers
@@ -55,6 +60,11 @@ export default function Command() {
           return prev;
         }
         
+        // Trigger HUD Alert on new track
+        if (showHUDAlert) {
+          showHUD(`▶ ${currentTrack}`);
+        }
+        
         const newHistory = [
           { track: currentTrack, timestamp: Date.now() },
           ...prev
@@ -66,7 +76,7 @@ export default function Command() {
         return trimmedHistory;
       });
     }
-  }, [currentTrack]);
+  }, [currentTrack, showHUDAlert]);
 
   const flashDurationMs = 12000;
   const isFlashing = prefs.flashTrackName !== false && (now - trackStartTime < flashDurationMs);
@@ -136,6 +146,12 @@ export default function Command() {
     const newVal = !pinTrackName;
     cache.set("pinTrackName", newVal ? "true" : "false");
     setPinTrackName(newVal);
+  };
+
+  const toggleHUDAlert = () => {
+    const newVal = !showHUDAlert;
+    cache.set("showHUDAlert", newVal ? "true" : "false");
+    setShowHUDAlert(newVal);
   };
 
   const renderPlayerControls = (player: any, isRoot = false) => {
@@ -266,6 +282,11 @@ export default function Command() {
           title={pinTrackName ? "Unpin Track Name" : "Pin Track Name to Menu Bar"} 
           icon={pinTrackName ? Icon.Text : Icon.Text}
           onAction={togglePinTrackName} 
+        />
+        <MenuBarExtra.Item 
+          title={showHUDAlert ? "Disable HUD Popups" : "Enable HUD Popups"} 
+          icon={showHUDAlert ? Icon.EyeDisabled : Icon.Eye}
+          onAction={toggleHUDAlert} 
         />
         <MenuBarExtra.Item title="Preferences..." onAction={openCommandPreferences} shortcut={{ modifiers: ["cmd"], key: "," }} />
       </MenuBarExtra.Section>
