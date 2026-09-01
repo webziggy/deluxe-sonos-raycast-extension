@@ -51,7 +51,11 @@ export default function Command() {
     try { return JSON.parse(cache.get("trackHistory") || "[]"); } catch (e) { return []; }
   });
 
-  const lastTracksRef = useRef<Record<string, string>>({});
+  const lastTracksRef = useRef<Record<string, string>>(
+    (() => {
+      try { return JSON.parse(cache.get("lastTracks") || "{}"); } catch (e) { return {}; }
+    })()
+  );
 
   // Monitor ALL speakers for track changes to trigger HUD and History
   useEffect(() => {
@@ -84,6 +88,10 @@ export default function Command() {
         triggeredChange = true;
       }
       lastTracksRef.current[player.entity_id] = trackString;
+    }
+
+    if (triggeredChange) {
+      cache.set("lastTracks", JSON.stringify(lastTracksRef.current));
     }
   }, [allPlayers, showHUDAlert]);
 
