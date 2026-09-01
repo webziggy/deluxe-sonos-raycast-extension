@@ -122,17 +122,6 @@ export default function Command() {
     }
   }, [allPlayers, showHUDAlert]);
 
-  // Compute the menu title dynamically
-  let menuTitle = "Sonos";
-  if (currentTrack) {
-      const displayLength = 15;
-      if (currentTrack.length <= displayLength) {
-        menuTitle = `▶ ${currentTrack}`;
-      } else {
-        menuTitle = `▶ ${currentTrack.substring(0, displayLength)}...`;
-      }
-    }
-  }
 
   const handlePlayPause = async (entityId: string) => {
     await callService("media_player", "media_play_pause", { entity_id: entityId });
