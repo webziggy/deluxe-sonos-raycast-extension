@@ -231,7 +231,6 @@ export default function Command() {
           <MenuBarExtra.Item 
             key={`nowPlaying-${index}`}
             title={line} 
-            tooltip={index === 0 ? fullNowPlaying : undefined} 
             icon={isRoot ? (index === 0 ? stateIcon : transparentIcon) : undefined} 
           />
         ))}
@@ -371,7 +370,6 @@ export default function Command() {
                     <MenuBarExtra.Item 
                       key={`${i}-${lineIdx}`}
                       title={line} 
-                      tooltip={lineIdx === 0 ? item.track : undefined}
                       subtitle={lineIdx === 0 ? new Date(item.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : undefined} 
                     />
                   ))}
