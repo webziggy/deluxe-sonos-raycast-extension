@@ -1,5 +1,5 @@
 import { MenuBarExtra, openCommandPreferences, Icon, Cache, getPreferenceValues, showHUD } from "@raycast/api";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Fragment } from "react";
 import { callService, Preferences } from "./api";
 import { useSonosPlayers } from "./useSonosPlayers";
 
@@ -18,6 +18,33 @@ export default function Command() {
 
   const debugLog = (...args: any[]) => {
     if (prefs.debugLogging) console.log(new Date().toISOString(), "[DEBUG]", ...args);
+  };
+
+  const wrapText = (text: string, maxLength: number): string[] => {
+    if (text.length <= maxLength) return [text];
+    
+    const words = text.split(" ");
+    const lines: string[] = [];
+    let currentLine = "";
+    
+    for (const word of words) {
+      // If a single word is absurdly long, we just have to break it
+      if (word.length > maxLength) {
+        if (currentLine) lines.push(currentLine);
+        lines.push(word.substring(0, maxLength - 3) + "...");
+        currentLine = "";
+        continue;
+      }
+      
+      if (currentLine.length + word.length + 1 > maxLength) {
+        if (currentLine) lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = currentLine ? `${currentLine} ${word}` : word;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+    return lines;
   };
 
   const { players: allPlayers, isLoading, error } = useSonosPlayers();
@@ -200,14 +227,14 @@ export default function Command() {
     
     const maxLen = 60;
     let fullNowPlaying = "Idle";
-    let nowPlaying = "Idle";
+    let nowPlayingLines = ["Idle"];
     
     if (state === "playing" || state === "paused") {
       fullNowPlaying = [mediaTitle, mediaArtist].filter(Boolean).join(" - ") || "Unknown Media";
-      nowPlaying = fullNowPlaying.length > maxLen ? fullNowPlaying.substring(0, maxLen - 3) + "..." : fullNowPlaying;
+      nowPlayingLines = wrapText(fullNowPlaying, maxLen);
     } else if (state === "unavailable" || state === "unknown") {
       fullNowPlaying = "Offline";
-      nowPlaying = "Offline";
+      nowPlayingLines = ["Offline"];
     }
 
     const stateIcon = state === "playing" 
@@ -221,7 +248,14 @@ export default function Command() {
     const content = (
       <>
         {isRoot && <MenuBarExtra.Item title={title} icon={Icon.Speaker} />}
-        <MenuBarExtra.Item title={nowPlaying} tooltip={fullNowPlaying} icon={isRoot ? stateIcon : undefined} />
+        {nowPlayingLines.map((line, index) => (
+          <MenuBarExtra.Item 
+            key={`nowPlaying-${index}`}
+            title={line} 
+            tooltip={index === 0 ? fullNowPlaying : undefined} 
+            icon={isRoot && index === 0 ? stateIcon : undefined} 
+          />
+        ))}
         {!isRoot && <MenuBarExtra.Item title={`State: ${state}`} />}
         
         <MenuBarExtra.Section title="Controls">
@@ -315,14 +349,18 @@ export default function Command() {
         <MenuBarExtra.Section>
           <MenuBarExtra.Submenu title="Recently Played" icon={Icon.Clock}>
             {trackHistory.map((item, i) => {
-              const displayTitle = item.track.length > 60 ? item.track.substring(0, 57) + "..." : item.track;
+              const displayLines = wrapText(item.track, 60);
               return (
-                <MenuBarExtra.Item 
-                  key={i} 
-                  title={displayTitle} 
-                  tooltip={item.track}
-                  subtitle={new Date(item.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 
-                />
+                <Fragment key={i}>
+                  {displayLines.map((line, lineIdx) => (
+                    <MenuBarExtra.Item 
+                      key={`${i}-${lineIdx}`}
+                      title={line} 
+                      tooltip={lineIdx === 0 ? item.track : undefined}
+                      subtitle={lineIdx === 0 ? new Date(item.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : undefined} 
+                    />
+                  ))}
+                </Fragment>
               );
             })}
           </MenuBarExtra.Submenu>
