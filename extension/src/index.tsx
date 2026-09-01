@@ -228,6 +228,23 @@ export default function Command() {
     setShowHUDAlert(newVal);
   };
 
+  const renderExactVolumeSubmenu = (members: any[], title = "Set Exact Volume") => (
+    <MenuBarExtra.Submenu title={title} icon={Icon.Speaker}>
+      {Array.from({ length: 10 }, (_, i) => i * 10).map(tens => (
+        <MenuBarExtra.Submenu key={tens} title={`${tens}% - ${tens + 9}%`}>
+          {Array.from({ length: 10 }, (_, i) => tens + i).map(vol => (
+            <MenuBarExtra.Item 
+              key={vol} 
+              title={`${vol}%`} 
+              onAction={() => handleSetExactVolume(members, vol / 100)} 
+            />
+          ))}
+        </MenuBarExtra.Submenu>
+      ))}
+      <MenuBarExtra.Item title="100%" onAction={() => handleSetExactVolume(members, 1)} />
+    </MenuBarExtra.Submenu>
+  );
+
   const renderPlayerControls = (player: any, isRoot = false) => {
     const title = player.groupName;
     const state = player.state;
@@ -313,20 +330,36 @@ export default function Command() {
             shortcut={isRoot ? { modifiers: ["cmd"], key: "-" } : undefined}
             onAction={() => handleVolumeChange(player.groupMembers, -0.05)} 
           />
-          <MenuBarExtra.Submenu title="Set Exact Volume" icon={Icon.Speaker}>
-            {Array.from({ length: 10 }, (_, i) => i * 10).map(tens => (
-              <MenuBarExtra.Submenu key={tens} title={`${tens}% - ${tens + 9}%`}>
-                {Array.from({ length: 10 }, (_, i) => tens + i).map(vol => (
-                  <MenuBarExtra.Item 
-                    key={vol} 
-                    title={`${vol}%`} 
-                    onAction={() => handleSetExactVolume(player.groupMembers, vol / 100)} 
-                  />
-                ))}
-              </MenuBarExtra.Submenu>
-            ))}
-            <MenuBarExtra.Item title="100%" onAction={() => handleSetExactVolume(player.groupMembers, 1)} />
-          </MenuBarExtra.Submenu>
+          {renderExactVolumeSubmenu(player.groupMembers)}
+
+          {player.groupMembers.length > 1 && (
+            <>
+              {player.groupMembers.map((m: any) => {
+                const vol = Math.round((m.attributes?.volume_level || 0) * 100);
+                const indMuted = m.attributes?.is_volume_muted;
+                return (
+                  <MenuBarExtra.Submenu key={m.entity_id} title={`${m.attributes?.friendly_name} (${vol}%)`} icon={Icon.Speaker}>
+                    <MenuBarExtra.Item 
+                      title={indMuted ? "Unmute" : "Mute"} 
+                      icon={indMuted ? Icon.SpeakerOn : Icon.SpeakerOff}
+                      onAction={() => handleToggleMute([m], indMuted)} 
+                    />
+                    <MenuBarExtra.Item 
+                      title="Volume +5%" 
+                      icon={Icon.SpeakerUp}
+                      onAction={() => handleVolumeChange([m], 0.05)} 
+                    />
+                    <MenuBarExtra.Item 
+                      title="Volume -5%" 
+                      icon={Icon.SpeakerDown}
+                      onAction={() => handleVolumeChange([m], -0.05)} 
+                    />
+                    {renderExactVolumeSubmenu([m])}
+                  </MenuBarExtra.Submenu>
+                );
+              })}
+            </>
+          )}
         </MenuBarExtra.Section>
 
         {sourceList.length > 0 && (
