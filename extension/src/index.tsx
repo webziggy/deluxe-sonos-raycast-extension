@@ -78,23 +78,26 @@ export default function Command() {
     ? [primaryPlayer.attributes?.media_title, primaryPlayer.attributes?.media_artist].filter(Boolean).join(" - ")
     : null;
 
-  // Reset track start time when track changes so the marquee and flash timer reset
+  // Reset track start time when track changes
   useEffect(() => {
     setTrackStartTime(Date.now());
   }, [currentTrack]);
 
-  // Tick every 1 second to update the marquee offset and flash timer
+  const flashDurationMs = 12000;
+  const isFlashing = prefs.flashTrackName !== false && (now - trackStartTime < flashDurationMs);
+  const isMarquee = currentTrack && currentTrack.length > 15 && (pinTrackName || isFlashing);
+  const isAnimating = isMarquee || isFlashing;
+
+  // Only run the 1-second ticker if we actively need to animate the marquee or count down the flash
   useEffect(() => {
+    if (!isAnimating) return;
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isAnimating]);
 
-  // Compute the menu title dynamically based on time (immune to freezing)
+  // Compute the menu title dynamically
   let menuTitle = "Sonos";
   if (currentTrack) {
-    const flashDurationMs = 12000; // 12 seconds so it has time to scroll a bit
-    const isFlashing = prefs.flashTrackName !== false && (now - trackStartTime < flashDurationMs);
-    
     if (pinTrackName || isFlashing) {
       const displayLength = 15; // Max characters to take up less width
       if (currentTrack.length <= displayLength) {
