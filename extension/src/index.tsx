@@ -97,13 +97,22 @@ export default function Command() {
 
   const [isFlashVisible, setIsFlashVisible] = useState(false);
 
-  // Trigger the 12-second flash explicitly when the PRIMARY track changes
+  // Trigger the 12-second flash explicitly when the PRIMARY track ACTUALLY changes
   useEffect(() => {
     if (!currentTrack) {
       debugLog("No current track, hiding flash");
       setIsFlashVisible(false);
+      cache.remove("lastPrimaryTrack");
       return;
     }
+    
+    const lastSeen = cache.get("lastPrimaryTrack");
+    if (lastSeen === currentTrack) {
+      // The component was just remounted by Raycast, but the track didn't actually change.
+      return;
+    }
+    
+    cache.set("lastPrimaryTrack", currentTrack);
     
     debugLog("Track changed, showing flash for 12 seconds:", currentTrack);
     setIsFlashVisible(true);
