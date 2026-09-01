@@ -376,7 +376,7 @@ export default function Command() {
           onAction={togglePinTrackName} 
         />
         <MenuBarExtra.Item 
-          title={showHUDAlert ? "Disable HUD Popups" : "Enable HUD Popups"} 
+          title={showHUDAlert ? "Disable Toast Notifications" : "Enable Toast Notifications"} 
           icon={showHUDAlert ? Icon.EyeDisabled : Icon.Eye}
           onAction={toggleHUDAlert} 
         />

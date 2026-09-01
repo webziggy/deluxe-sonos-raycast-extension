@@ -16,7 +16,7 @@ type ExtensionPreferences = {
   "includeEntities"?: string,
   /** Menu Bar Appearance - Briefly show the track name in the Mac menu bar when a new song starts playing. */
   "flashTrackName": boolean,
-  /** Notifications - Show a brief Heads Up Display overlay when a new track starts. */
+  /** Notifications - Show a brief popup notification when a new track starts. */
   "showHudOnTrackChange": boolean,
   /** Developer Options - Log background state changes to the console. */
   "debugLogging": boolean

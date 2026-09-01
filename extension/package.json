@@ -66,9 +66,9 @@
       "name": "showHudOnTrackChange",
       "type": "checkbox",
       "required": false,
-      "label": "Show HUD on track change",
+      "label": "Show Toast on track change",
       "title": "Notifications",
-      "description": "Show a brief Heads Up Display overlay when a new track starts.",
+      "description": "Show a brief popup notification when a new track starts.",
       "default": false
     },
     {
