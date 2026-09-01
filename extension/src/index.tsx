@@ -69,8 +69,8 @@ export default function Command() {
     ? [primaryPlayer.attributes?.media_title, primaryPlayer.attributes?.media_artist].filter(Boolean).join(" - ")
     : null;
 
-  const [trackHistory, setTrackHistory] = useState<{track: string, timestamp: number}[]>(() => {
-    try { return JSON.parse(cache.get("trackHistory") || "[]"); } catch (e) { return []; }
+  const [trackHistories, setTrackHistories] = useState<Record<string, {track: string, timestamp: number}[]>>(() => {
+    try { return JSON.parse(cache.get("trackHistories") || "{}"); } catch (e) { return {}; }
   });
 
   const lastTracksRef = useRef<Record<string, string>>(
@@ -91,16 +91,16 @@ export default function Command() {
       if (trackString && trackString !== lastTracksRef.current[player.entity_id]) {
         // Add to history if it's not empty
         if (trackString !== "Idle" && trackString !== "Offline") {
-          setTrackHistory(prev => {
-            const historyEntry = `[${player.groupName}] ${trackString}`;
+          setTrackHistories(prev => {
+            const currentHistory = prev[player.entity_id] || [];
             // Prevent rapid back-to-back duplicates for the same speaker
-            if (prev.length > 0 && prev[0].track === historyEntry) {
+            if (currentHistory.length > 0 && currentHistory[0].track === trackString) {
               return prev;
             }
-            const newHistory = [{ track: historyEntry, timestamp: Date.now() }, ...prev];
-            const trimmedHistory = newHistory.slice(0, 10);
-            cache.set("trackHistory", JSON.stringify(trimmedHistory));
-            return trimmedHistory;
+            const newHistory = [{ track: trackString, timestamp: Date.now() }, ...currentHistory].slice(0, 10);
+            const nextState = { ...prev, [player.entity_id]: newHistory };
+            cache.set("trackHistories", JSON.stringify(nextState));
+            return nextState;
           });
         }
         triggeredChange = true;
@@ -243,10 +243,10 @@ export default function Command() {
           />
         </MenuBarExtra.Section>
 
-        {isRoot && trackHistory.length > 0 && (
+        {(trackHistories[player.entity_id] || []).length > 0 && (
           <MenuBarExtra.Section>
             <MenuBarExtra.Submenu title="Recently Played" icon={Icon.Clock}>
-              {trackHistory.map((item, i) => {
+              {(trackHistories[player.entity_id] || []).map((item, i) => {
                 const displayLines = wrapText(item.track, 60);
                 return (
                   <MenuBarExtra.Section key={i}>
