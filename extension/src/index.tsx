@@ -122,45 +122,9 @@ export default function Command() {
     }
   }, [allPlayers, showHUDAlert]);
 
-  const [isFlashVisible, setIsFlashVisible] = useState(false);
-
-  // Trigger the 12-second flash explicitly when the PRIMARY track ACTUALLY changes
-  useEffect(() => {
-    if (!currentTrack) {
-      debugLog("No current track, hiding flash");
-      setIsFlashVisible(false);
-      cache.remove("lastPrimaryTrack");
-      return;
-    }
-    
-    const lastSeen = cache.get("lastPrimaryTrack");
-    if (lastSeen === currentTrack) {
-      // The component was just remounted by Raycast, but the track didn't actually change.
-      return;
-    }
-    
-    cache.set("lastPrimaryTrack", currentTrack);
-    
-    debugLog("Track changed, showing flash for 12 seconds:", currentTrack);
-    setIsFlashVisible(true);
-    
-    const timer = setTimeout(() => {
-      debugLog("12-second timer fired, hiding flash for:", currentTrack);
-      setIsFlashVisible(false);
-    }, 12000);
-    
-    return () => {
-      debugLog("Clearing 12-second timer for:", currentTrack);
-      clearTimeout(timer);
-    };
-  }, [currentTrack]);
-
   // Compute the menu title dynamically
   let menuTitle = "Sonos";
   if (currentTrack) {
-    const isFlashing = prefs.flashTrackName !== false && isFlashVisible;
-    
-    if (pinTrackName || isFlashing) {
       const displayLength = 15;
       if (currentTrack.length <= displayLength) {
         menuTitle = `▶ ${currentTrack}`;
@@ -214,12 +178,6 @@ export default function Command() {
   const handleUnpinSpeaker = () => {
     cache.remove("pinnedSpeaker");
     setPinnedSpeaker(undefined);
-  };
-
-  const togglePinTrackName = () => {
-    const newVal = !pinTrackName;
-    cache.set("pinTrackName", newVal ? "true" : "false");
-    setPinTrackName(newVal);
   };
 
   const toggleHUDAlert = () => {
@@ -396,7 +354,7 @@ export default function Command() {
   };
 
   return (
-    <MenuBarExtra icon={Icon.Music} isLoading={isLoading} title={menuTitle}>
+    <MenuBarExtra icon={Icon.Music} isLoading={isLoading}>
       {allPlayers.length === 0 && !isLoading && (
         <MenuBarExtra.Item title="No Sonos players found" />
       )}
@@ -436,11 +394,6 @@ export default function Command() {
       )}
       
       <MenuBarExtra.Section>
-        <MenuBarExtra.Item 
-          title={pinTrackName ? "Unpin Track Name" : "Pin Track Name to Menu Bar"} 
-          icon={pinTrackName ? Icon.Text : Icon.Text}
-          onAction={togglePinTrackName} 
-        />
         <MenuBarExtra.Item 
           title={showHUDAlert ? "Disable Toast Notifications" : "Enable Toast Notifications"} 
           icon={showHUDAlert ? Icon.EyeDisabled : Icon.Eye}
