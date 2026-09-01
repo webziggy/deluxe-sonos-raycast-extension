@@ -83,16 +83,18 @@ export default function Command() {
     }
   }, [allPlayers, showHUDAlert]);
 
-  const [trackStartTime, setTrackStartTime] = useState(Date.now());
-  const [forceRender, setForceRender] = useState(0);
+  const [isFlashVisible, setIsFlashVisible] = useState(false);
 
-  // Reset track start time when the PRIMARY track changes (for the Menu Bar flash)
+  // Trigger the 12-second flash explicitly when the PRIMARY track changes
   useEffect(() => {
-    setTrackStartTime(Date.now());
+    if (!currentTrack) {
+      setIsFlashVisible(false);
+      return;
+    }
     
-    // Force a re-render after 12 seconds to clear the flash
+    setIsFlashVisible(true);
     const timer = setTimeout(() => {
-      setForceRender(prev => prev + 1);
+      setIsFlashVisible(false);
     }, 12000);
     
     return () => clearTimeout(timer);
@@ -101,7 +103,7 @@ export default function Command() {
   // Compute the menu title dynamically
   let menuTitle = "Sonos";
   if (currentTrack) {
-    const isFlashing = prefs.flashTrackName !== false && (Date.now() - trackStartTime < 12000);
+    const isFlashing = prefs.flashTrackName !== false && isFlashVisible;
     
     if (pinTrackName || isFlashing) {
       const displayLength = 15;
