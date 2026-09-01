@@ -245,6 +245,8 @@ export default function Command() {
           ? Icon.WifiDisabled
           : Icon.Stop;
 
+    const transparentIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+
     const content = (
       <>
         {isRoot && <MenuBarExtra.Item title={title} icon={Icon.Speaker} />}
@@ -253,7 +255,7 @@ export default function Command() {
             key={`nowPlaying-${index}`}
             title={line} 
             tooltip={index === 0 ? fullNowPlaying : undefined} 
-            icon={isRoot && index === 0 ? stateIcon : undefined} 
+            icon={isRoot ? (index === 0 ? stateIcon : transparentIcon) : undefined} 
           />
         ))}
         {!isRoot && <MenuBarExtra.Item title={`State: ${state}`} />}
