@@ -190,6 +190,12 @@ export default function Command() {
     }
   };
 
+  const handleSetExactVolume = async (members: any[], volume: number) => {
+    for (const member of members) {
+      await callService("media_player", "volume_set", { entity_id: member.entity_id, volume_level: volume });
+    }
+  };
+
   const handleSelectSource = async (entityId: string, source: string) => {
     await callService("media_player", "select_source", { entity_id: entityId, source });
   };
@@ -294,6 +300,16 @@ export default function Command() {
             shortcut={isRoot ? { modifiers: ["cmd"], key: "-" } : undefined}
             onAction={() => handleVolumeChange(player.groupMembers, -0.05)} 
           />
+          <MenuBarExtra.Submenu title="Set Exact Volume" icon={Icon.Speaker}>
+            <MenuBarExtra.Item title="Mute (0%)" onAction={() => handleSetExactVolume(player.groupMembers, 0)} />
+            {Array.from({ length: 100 }, (_, i) => i + 1).map(vol => (
+              <MenuBarExtra.Item 
+                key={vol} 
+                title={`${vol}%`} 
+                onAction={() => handleSetExactVolume(player.groupMembers, vol / 100)} 
+              />
+            ))}
+          </MenuBarExtra.Submenu>
         </MenuBarExtra.Section>
 
         {sourceList.length > 0 && (
