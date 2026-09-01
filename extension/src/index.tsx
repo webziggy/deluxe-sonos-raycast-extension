@@ -19,8 +19,6 @@ export default function Command() {
   const { players: allPlayers, isLoading, error } = useSonosPlayers();
 
   // Use absolute time to avoid macOS App Nap freezing our timers
-  const [now, setNow] = useState(Date.now());
-  const [trackStartTime, setTrackStartTime] = useState(Date.now());
 
   if (error) {
     return (
@@ -85,37 +83,32 @@ export default function Command() {
     }
   }, [allPlayers, showHUDAlert]);
 
+  const [trackStartTime, setTrackStartTime] = useState(Date.now());
+  const [forceRender, setForceRender] = useState(0);
+
   // Reset track start time when the PRIMARY track changes (for the Menu Bar flash)
   useEffect(() => {
     setTrackStartTime(Date.now());
+    
+    // Force a re-render after 12 seconds to clear the flash
+    const timer = setTimeout(() => {
+      setForceRender(prev => prev + 1);
+    }, 12000);
+    
+    return () => clearTimeout(timer);
   }, [currentTrack]);
-
-  const flashDurationMs = 12000;
-  const isFlashing = prefs.flashTrackName !== false && (now - trackStartTime < flashDurationMs);
-  const isMarquee = currentTrack && currentTrack.length > 15 && (pinTrackName || isFlashing);
-  const isAnimating = isMarquee || isFlashing;
-
-  // Only run the 1-second ticker if we actively need to animate the marquee or count down the flash
-  useEffect(() => {
-    if (!isAnimating) return;
-    const interval = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(interval);
-  }, [isAnimating]);
 
   // Compute the menu title dynamically
   let menuTitle = "Sonos";
   if (currentTrack) {
+    const isFlashing = prefs.flashTrackName !== false && (Date.now() - trackStartTime < 12000);
+    
     if (pinTrackName || isFlashing) {
-      const displayLength = 15; // Max characters to take up less width
+      const displayLength = 15;
       if (currentTrack.length <= displayLength) {
         menuTitle = `▶ ${currentTrack}`;
       } else {
-        // HiFi Marquee logic
-        const paddedTrack = `${currentTrack}   ***   `;
-        // Shift by 1 character every second
-        const offset = Math.floor((now - trackStartTime) / 1000) % paddedTrack.length;
-        const visibleText = (paddedTrack + paddedTrack).substring(offset, offset + displayLength);
-        menuTitle = `▶ ${visibleText}`;
+        menuTitle = `▶ ${currentTrack.substring(0, displayLength)}...`;
       }
     }
   }
