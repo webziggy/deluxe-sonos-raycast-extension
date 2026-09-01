@@ -1,137 +1,70 @@
 import { Grid, ActionPanel, Action, Icon, openCommandPreferences, Cache } from "@raycast/api";
 import { useEffect, useState } from "react";
-import { getHAConnection, fetchFavourites, callService, getFullImageUrl, filterSonosPlayers, getGroupedPlayers } from "./api";
-import { HassEntities, subscribeEntities } from "home-assistant-js-websocket";
+import { callService, getFullImageUrl } from "./api";
+import { useSonosPlayers } from "./useSonosPlayers";
 
 const cache = new Cache();
 
-interface MediaClass {
-  title: string;
-  media_content_id: string;
-  media_content_type: string;
-  media_class: string;
-  thumbnail: string;
-  children?: MediaClass[];
-}
-
 export default function Command() {
-  const [entities, setEntities] = useState<HassEntities>(() => {
-    const cached = cache.get("entities");
-    if (cached) {
-      try {
-        return JSON.parse(cached);
-      } catch (e) {
-        return {};
-      }
-    }
-    return {};
-  });
+  const { players: sonosPlayers, isLoading, error } = useSonosPlayers();
   
-  const [favourites, setFavourites] = useState<MediaClass[]>([]);
-  const [isLoading, setIsLoading] = useState(!cache.has("entities"));
-  const [error, setError] = useState<string>();
   const [selectedSpeaker, setSelectedSpeaker] = useState<string>("");
 
   useEffect(() => {
-    let unsubscribe: () => void;
-    
-    getHAConnection().then((connection) => {
-      unsubscribe = subscribeEntities(connection, (newEntities) => {
-        setEntities(newEntities);
-        cache.set("entities", JSON.stringify(newEntities));
-      });
-    }).catch((err) => {
-      setError(String(err));
-      setIsLoading(false);
-    });
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, []);
-
-  const sonosPlayers = getGroupedPlayers(filterSonosPlayers(entities));
-
-  useEffect(() => {
     if (!selectedSpeaker && sonosPlayers.length > 0) {
-      const pinned = cache.get("pinnedSpeaker"); setSelectedSpeaker(pinned && sonosPlayers.find(p => p.entity_id === pinned) ? pinned : sonosPlayers[0].entity_id);
+      const pinned = cache.get("pinnedSpeaker"); 
+      setSelectedSpeaker(pinned && sonosPlayers.find(p => p.entity_id === pinned) ? pinned : sonosPlayers[0].entity_id);
     }
   }, [sonosPlayers, selectedSpeaker]);
 
-  useEffect(() => {
-    if (!selectedSpeaker) return;
-    
-    setIsLoading(true);
-    fetchFavourites(selectedSpeaker)
-      .then((data: any) => {
-        if (data && data.children) {
-          setFavourites(data.children);
-        }
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setError(String(err));
-        setIsLoading(false);
-      });
-  }, [selectedSpeaker]);
-
   if (error) {
-    return (
-      <Grid>
-        <Grid.EmptyView title="Error" description={error} actions={
-          <ActionPanel>
-            <Action title="Open Preferences" onAction={openCommandPreferences} />
-          </ActionPanel>
-        } />
-      </Grid>
-    );
+    return <Grid><Grid.EmptyView title="Connection Error" description={error} icon={Icon.Warning} /></Grid>;
   }
 
-  const handlePlay = async (mediaId: string, mediaType: string) => {
-    await callService("media_player", "play_media", {
-      entity_id: selectedSpeaker,
-      media_content_id: mediaId,
-      media_content_type: mediaType
-    });
+  const selectedPlayerData = sonosPlayers.find(p => p.entity_id === selectedSpeaker);
+  const favourites = selectedPlayerData?.attributes?.source_list || [];
+  const currentSource = selectedPlayerData?.attributes?.source;
+
+  const handlePlayFavourite = async (source: string) => {
+    if (!selectedSpeaker) return;
+    await callService("media_player", "select_source", { entity_id: selectedSpeaker, source });
   };
 
   return (
     <Grid 
-      columns={5} 
-      isLoading={isLoading} 
-      searchBarPlaceholder="Search Favourites..."
+      isLoading={isLoading}
+      columns={4}
       searchBarAccessory={
         sonosPlayers.length > 0 ? (
           <Grid.Dropdown tooltip="Select Speaker" value={selectedSpeaker} onChange={setSelectedSpeaker}>
-            <Grid.Dropdown.Section title="Sonos Speakers">
-              {sonosPlayers.map((player) => (
-                <Grid.Dropdown.Item 
-                  key={player.entity_id} 
-                  title={player.groupName} 
-                  value={player.entity_id} 
-                />
-              ))}
-            </Grid.Dropdown.Section>
+            {sonosPlayers.map(p => (
+              <Grid.Dropdown.Item key={p.entity_id} title={p.groupName} value={p.entity_id} />
+            ))}
           </Grid.Dropdown>
         ) : null
       }
     >
-      <Grid.EmptyView icon={Icon.Star} title="No Favourites Found" description="Could not load Sonos favourites from Home Assistant." />
-      {favourites.map((fav) => (
-        <Grid.Item
-          key={fav.media_content_id}
-          title={fav.title}
-          content={fav.thumbnail ? getFullImageUrl(fav.thumbnail) : Icon.Music}
-          actions={
-            <ActionPanel>
-              <Action title="Play on Speaker" icon={Icon.Play} onAction={() => handlePlay(fav.media_content_id, fav.media_content_type)} />
-            </ActionPanel>
-          }
-        />
-      ))}
+      {favourites.length === 0 && !isLoading && (
+        <Grid.EmptyView title="No Favourites Found" description="Add Sonos favourites in the Sonos app or Home Assistant." icon={Icon.StarDisabled} />
+      )}
+      
+      {favourites.map((source: string) => {
+        const isPlaying = source === currentSource;
+        return (
+          <Grid.Item
+            key={source}
+            title={source}
+            subtitle={isPlaying ? "Playing..." : undefined}
+            content={Icon.Star}
+            actions={
+              <ActionPanel>
+                <Action title="Play Favourite" icon={Icon.Play} onAction={() => handlePlayFavourite(source)} />
+                <Action title="Open Preferences" icon={Icon.Gear} onAction={openCommandPreferences} shortcut={{ modifiers: ["cmd"], key: "," }} />
+              </ActionPanel>
+            }
+          />
+        );
+      })}
     </Grid>
   );
 }

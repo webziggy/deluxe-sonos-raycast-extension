@@ -1,7 +1,7 @@
 import { MenuBarExtra, openCommandPreferences, Icon, Cache, getPreferenceValues } from "@raycast/api";
 import { useEffect, useState } from "react";
-import { getHAConnection, callService, filterSonosPlayers, sortPlayers, Preferences, getGroupedPlayers } from "./api";
-import { HassEntities, subscribeEntities } from "home-assistant-js-websocket";
+import { callService, Preferences } from "./api";
+import { useSonosPlayers } from "./useSonosPlayers";
 
 const cache = new Cache();
 
@@ -11,46 +11,11 @@ export default function Command() {
   const [pinnedSpeaker, setPinnedSpeaker] = useState<string | undefined>(cache.get("pinnedSpeaker"));
   const [pinTrackName, setPinTrackName] = useState<boolean>(cache.get("pinTrackName") === "true");
   
-  const [entities, setEntities] = useState<HassEntities>(() => {
-    const cached = cache.get("entities");
-    if (cached) {
-      try {
-        return JSON.parse(cached);
-      } catch (e) {
-        return {};
-      }
-    }
-    return {};
-  });
-  
-  const [isLoading, setIsLoading] = useState(!cache.has("entities"));
-  const [error, setError] = useState<string>();
+  const { players: allPlayers, isLoading, error } = useSonosPlayers();
 
   // Use absolute time to avoid macOS App Nap freezing our timers
   const [now, setNow] = useState(Date.now());
   const [trackStartTime, setTrackStartTime] = useState(Date.now());
-
-  useEffect(() => {
-    let unsubscribe: () => void;
-    
-    getHAConnection().then((connection) => {
-      unsubscribe = subscribeEntities(connection, (newEntities) => {
-        setEntities(newEntities);
-        cache.set("entities", JSON.stringify(newEntities));
-        setIsLoading(false);
-      });
-    }).catch((err) => {
-      console.error(err);
-      setError(String(err));
-      setIsLoading(false);
-    });
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, []);
 
   if (error) {
     return (
@@ -61,9 +26,6 @@ export default function Command() {
     );
   }
 
-  const rawPlayers = filterSonosPlayers(entities);
-  const allPlayers = getGroupedPlayers(rawPlayers);
-  
   const sortedPlayers = [...allPlayers].sort((a, b) => {
     if (a.entity_id === pinnedSpeaker) return -1;
     if (b.entity_id === pinnedSpeaker) return 1;
