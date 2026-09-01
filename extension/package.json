@@ -70,6 +70,15 @@
       "title": "Notifications",
       "description": "Show a brief Heads Up Display overlay when a new track starts.",
       "default": false
+    },
+    {
+      "name": "debugLogging",
+      "type": "checkbox",
+      "required": false,
+      "label": "Enable Debug Logging",
+      "title": "Developer Options",
+      "description": "Log background state changes to the console.",
+      "default": false
     }
   ],
   "dependencies": {

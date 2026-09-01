@@ -19,6 +19,7 @@ export interface Preferences {
   includeEntities?: string;
   flashTrackName?: boolean;
   showHudOnTrackChange?: boolean;
+  debugLogging?: boolean;
 }
 
 let connectionPromise: Promise<Connection> | null = null;

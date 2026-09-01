@@ -16,6 +16,10 @@ export default function Command() {
     return prefs.showHudOnTrackChange === true;
   });
 
+  const debugLog = (...args: any[]) => {
+    if (prefs.debugLogging) console.log(new Date().toISOString(), "[DEBUG]", ...args);
+  };
+
   const { players: allPlayers, isLoading, error } = useSonosPlayers();
 
   // Use absolute time to avoid macOS App Nap freezing our timers
@@ -88,16 +92,23 @@ export default function Command() {
   // Trigger the 12-second flash explicitly when the PRIMARY track changes
   useEffect(() => {
     if (!currentTrack) {
+      debugLog("No current track, hiding flash");
       setIsFlashVisible(false);
       return;
     }
     
+    debugLog("Track changed, showing flash for 12 seconds:", currentTrack);
     setIsFlashVisible(true);
+    
     const timer = setTimeout(() => {
+      debugLog("12-second timer fired, hiding flash for:", currentTrack);
       setIsFlashVisible(false);
     }, 12000);
     
-    return () => clearTimeout(timer);
+    return () => {
+      debugLog("Clearing 12-second timer for:", currentTrack);
+      clearTimeout(timer);
+    };
   }, [currentTrack]);
 
   // Compute the menu title dynamically

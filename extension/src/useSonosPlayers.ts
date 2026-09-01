@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Cache } from "@raycast/api";
+import { Cache, getPreferenceValues } from "@raycast/api";
 import { getHAConnection, filterSonosPlayers, getGroupedPlayers } from "./api";
 import { subscribeEntities } from "home-assistant-js-websocket";
 
@@ -29,6 +29,9 @@ export function useSonosPlayers() {
         const currentJson = JSON.stringify(groupedPlayers);
         
         if (currentJson !== lastJsonRef.current) {
+          const prefs = getPreferenceValues<{debugLogging?: boolean}>();
+          if (prefs.debugLogging) console.log(new Date().toISOString(), "[DEBUG]", "Sonos state changed, triggering React update.");
+          
           lastJsonRef.current = currentJson;
           setPlayers(groupedPlayers);
           cache.set("sonosPlayers", currentJson);
