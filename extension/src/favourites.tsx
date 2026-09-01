@@ -1,14 +1,14 @@
-import { Grid, ActionPanel, Action, Icon, openCommandPreferences, Cache } from "@raycast/api";
+import { Grid, ActionPanel, Action, Icon, openCommandPreferences, Cache, LaunchProps } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { callService, getFullImageUrl } from "./api";
 import { useSonosPlayers } from "./useSonosPlayers";
 
 const cache = new Cache();
 
-export default function Command() {
+export default function Command(props: LaunchProps<{ launchContext?: { entityId?: string } }>) {
   const { players: sonosPlayers, isLoading, error } = useSonosPlayers();
   
-  const [selectedSpeaker, setSelectedSpeaker] = useState<string>("");
+  const [selectedSpeaker, setSelectedSpeaker] = useState<string>(props.launchContext?.entityId || "");
 
   useEffect(() => {
     if (!selectedSpeaker && sonosPlayers.length > 0) {

@@ -1,4 +1,4 @@
-import { MenuBarExtra, openCommandPreferences, Icon, Cache, getPreferenceValues, open } from "@raycast/api";
+import { MenuBarExtra, openCommandPreferences, Icon, Cache, getPreferenceValues, open, launchCommand, LaunchType } from "@raycast/api";
 import { useEffect, useState, useRef, Fragment } from "react";
 import { callService, Preferences } from "./api";
 import { useSonosPlayers } from "./useSonosPlayers";
@@ -241,6 +241,23 @@ export default function Command() {
             shortcut={isRoot ? { modifiers: ["cmd"], key: "arrowLeft" } : undefined}
             onAction={() => handlePrevious(player.entity_id)} 
           />
+          {player.attributes?.shuffle !== undefined && (
+            <MenuBarExtra.Item 
+              title={player.attributes.shuffle ? "Shuffle: On" : "Shuffle: Off"} 
+              icon={player.attributes.shuffle ? Icon.Shuffle : Icon.ArrowRight} 
+              onAction={() => callService("media_player", "shuffle_set", { entity_id: player.entity_id, shuffle: !player.attributes.shuffle })} 
+            />
+          )}
+          {player.attributes?.repeat !== undefined && (
+            <MenuBarExtra.Item 
+              title={`Repeat: ${player.attributes.repeat}`} 
+              icon={player.attributes.repeat === "off" ? Icon.ArrowRight : Icon.Repeat} 
+              onAction={() => {
+                const nextRepeat = player.attributes.repeat === "off" ? "all" : player.attributes.repeat === "all" ? "one" : "off";
+                callService("media_player", "repeat_set", { entity_id: player.entity_id, repeat: nextRepeat });
+              }} 
+            />
+          )}
         </MenuBarExtra.Section>
 
         {(trackHistories[player.entity_id] || []).length > 0 && (
@@ -316,6 +333,25 @@ export default function Command() {
           )}
         </MenuBarExtra.Section>
 
+        { (player.nightSoundEntityId || player.speechEnhancementEntityId) && (
+          <MenuBarExtra.Section title="Home Theater">
+            {player.nightSoundEntityId && (
+              <MenuBarExtra.Item 
+                title={player.nightSound ? "Night Sound: On" : "Night Sound: Off"} 
+                icon={player.nightSound ? Icon.Moon : Icon.Sun} 
+                onAction={() => callService("switch", "toggle", { entity_id: player.nightSoundEntityId })} 
+              />
+            )}
+            {player.speechEnhancementEntityId && (
+              <MenuBarExtra.Item 
+                title={player.speechEnhancement ? "Speech Enhancement: On" : "Speech Enhancement: Off"} 
+                icon={player.speechEnhancement ? Icon.SpeechBubbleActive : Icon.SpeechBubble} 
+                onAction={() => callService("switch", "toggle", { entity_id: player.speechEnhancementEntityId })} 
+              />
+            )}
+          </MenuBarExtra.Section>
+        )}
+
         {sourceList.length > 0 && (
           <MenuBarExtra.Section>
             <MenuBarExtra.Submenu title="Favourites" icon={Icon.Star}>
@@ -329,6 +365,34 @@ export default function Command() {
             </MenuBarExtra.Submenu>
           </MenuBarExtra.Section>
         )}
+
+        <MenuBarExtra.Section>
+          <MenuBarExtra.Item title="Open Favourites..." icon={Icon.Star} onAction={() => launchCommand({ name: "favourites", type: LaunchType.UserInitiated, context: { entityId: player.entity_id } })} />
+          <MenuBarExtra.Item title="Open Queue..." icon={Icon.List} onAction={() => launchCommand({ name: "queue", type: LaunchType.UserInitiated, context: { entityId: player.entity_id } })} />
+        </MenuBarExtra.Section>
+
+        <MenuBarExtra.Section>
+          <MenuBarExtra.Submenu title="Group With..." icon={Icon.Plus}>
+            {allPlayers.filter(p => p.entity_id !== player.entity_id).map(other => (
+              <MenuBarExtra.Item 
+                key={other.entity_id} 
+                title={other.groupName} 
+                onAction={() => callService("media_player", "join", { entity_id: player.entity_id, group_members: [other.entity_id] })}
+              />
+            ))}
+          </MenuBarExtra.Submenu>
+          {player.groupMembers.length > 1 && (
+            <MenuBarExtra.Submenu title="Ungroup Speakers" icon={Icon.Minus}>
+              {player.groupMembers.map((m: any) => (
+                <MenuBarExtra.Item 
+                  key={m.entity_id} 
+                  title={`Remove ${m.attributes?.friendly_name}`} 
+                  onAction={() => callService("media_player", "unjoin", { entity_id: m.entity_id })}
+                />
+              ))}
+            </MenuBarExtra.Submenu>
+          )}
+        </MenuBarExtra.Section>
         
         <MenuBarExtra.Section>
           {isRoot ? (

@@ -26,6 +26,21 @@ export function useSonosPlayers() {
         const sonosPlayers = filterSonosPlayers(newEntities);
         const groupedPlayers = getGroupedPlayers(sonosPlayers);
         
+        groupedPlayers.forEach(player => {
+          const baseName = player.entity_id.split(".")[1];
+          const nightSound = newEntities[`switch.${baseName}_night_sound`];
+          const speechEnhancement = newEntities[`switch.${baseName}_speech_enhancement`];
+          
+          if (nightSound) {
+            player.nightSound = nightSound.state === "on";
+            player.nightSoundEntityId = nightSound.entity_id;
+          }
+          if (speechEnhancement) {
+            player.speechEnhancement = speechEnhancement.state === "on";
+            player.speechEnhancementEntityId = speechEnhancement.entity_id;
+          }
+        });
+
         const currentJson = JSON.stringify(groupedPlayers);
         
         if (currentJson !== lastJsonRef.current) {
