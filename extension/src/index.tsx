@@ -243,15 +243,15 @@ export default function Command() {
           />
           {player.attributes?.shuffle !== undefined && (
             <MenuBarExtra.Item 
-              title={player.attributes.shuffle ? "Shuffle: On" : "Shuffle: Off"} 
-              icon={player.attributes.shuffle ? Icon.Shuffle : Icon.ArrowRight} 
+              title={`Shuffle: ${player.attributes.shuffle ? "On" : "Off"}`} 
+              icon={Icon.Shuffle} 
               onAction={() => callService("media_player", "shuffle_set", { entity_id: player.entity_id, shuffle: !player.attributes.shuffle })} 
             />
           )}
           {player.attributes?.repeat !== undefined && (
             <MenuBarExtra.Item 
-              title={`Repeat: ${player.attributes.repeat}`} 
-              icon={player.attributes.repeat === "off" ? Icon.ArrowRight : Icon.Repeat} 
+              title={`Repeat: ${player.attributes.repeat.charAt(0).toUpperCase() + player.attributes.repeat.slice(1)}`} 
+              icon={Icon.Repeat} 
               onAction={() => {
                 const nextRepeat = player.attributes.repeat === "off" ? "all" : player.attributes.repeat === "all" ? "one" : "off";
                 callService("media_player", "repeat_set", { entity_id: player.entity_id, repeat: nextRepeat });

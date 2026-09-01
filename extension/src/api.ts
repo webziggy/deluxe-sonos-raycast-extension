@@ -97,10 +97,8 @@ export function filterSonosPlayers(entities: HassEntities) {
     if (!e.entity_id.startsWith("media_player.")) return false;
     if (allowedIds.length > 0) return allowedIds.includes(e.entity_id.toLowerCase());
     
-    // Heuristic: Sonos players usually have group_members or source_list
-    return e.attributes?.group_members !== undefined || 
-           e.attributes?.source_list !== undefined ||
-           e.attributes?.is_volume_muted !== undefined;
+    // Heuristic: Only Sonos players have group_members populated by the integration
+    return e.attributes?.group_members !== undefined;
   });
 }
 

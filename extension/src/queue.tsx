@@ -30,8 +30,16 @@ export default function Command(props: LaunchProps<{ launchContext?: { entityId?
     if (selectedSpeaker) {
       setQueueLoading(true);
       fetchQueue(selectedSpeaker)
-        .then((items) => {
-          setQueue(items || []);
+        .then((res: any) => {
+          let items: any[] = [];
+          if (Array.isArray(res)) {
+            items = res;
+          } else if (res?.response) {
+            items = res.response[selectedSpeaker] || Object.values(res.response)[0] || [];
+          } else if (res && typeof res === 'object') {
+            items = res[selectedSpeaker] || Object.values(res)[0] || [];
+          }
+          setQueue(Array.isArray(items) ? items : []);
           setQueueLoading(false);
         })
         .catch((err) => {
