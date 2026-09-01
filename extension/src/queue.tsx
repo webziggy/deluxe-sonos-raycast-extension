@@ -62,9 +62,16 @@ export default function Command() {
       searchBarAccessory={
         sonosPlayers.length > 0 ? (
           <List.Dropdown tooltip="Select Speaker" value={selectedSpeaker} onChange={setSelectedSpeaker}>
-            {sonosPlayers.map(p => (
-              <List.Dropdown.Item key={p.entity_id} title={p.groupName} value={p.entity_id} />
-            ))}
+            {sonosPlayers.map(p => {
+              const isOffline = p.state === "unavailable" || p.state === "unknown";
+              return (
+                <List.Dropdown.Item 
+                  key={p.entity_id} 
+                  title={`${p.groupName}${isOffline ? ' (Offline)' : ''}`} 
+                  value={p.entity_id} 
+                />
+              );
+            })}
           </List.Dropdown>
         ) : null
       }
