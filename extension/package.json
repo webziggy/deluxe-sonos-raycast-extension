@@ -54,21 +54,6 @@
       "placeholder": "media_player.loungesonos, media_player.bedroomsonos"
     },
     {
-      "name": "flashTrackName",
-      "type": "checkbox",
-      "required": false,
-      "label": "Flash track name on change",
-      "title": "Menu Bar Appearance",
-      "description": "Briefly show the track name in the Mac menu bar when a new song starts playing.",
-      "default": true
-    },
-    {
-      "label": "Show Toast on track change",
-      "title": "Notifications",
-      "description": "Show a brief popup notification when a new track starts.",
-      "default": false
-    },
-    {
       "name": "debugLogging",
       "type": "checkbox",
       "required": false,
