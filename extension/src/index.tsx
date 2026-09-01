@@ -192,9 +192,17 @@ export default function Command() {
     let nowPlaying = "Idle";
     if (state === "playing" || state === "paused") {
       nowPlaying = [mediaTitle, mediaArtist].filter(Boolean).join(" - ") || "Unknown Media";
+    } else if (state === "unavailable" || state === "unknown") {
+      nowPlaying = "Offline";
     }
 
-    const stateIcon = state === "playing" ? Icon.Play : state === "paused" ? Icon.Pause : Icon.Stop;
+    const stateIcon = state === "playing" 
+      ? Icon.Play 
+      : state === "paused" 
+        ? Icon.Pause 
+        : state === "unavailable" || state === "unknown"
+          ? Icon.WifiDisabled
+          : Icon.Stop;
 
     const content = (
       <>
