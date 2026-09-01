@@ -1,4 +1,4 @@
-import { MenuBarExtra, openCommandPreferences, Icon, Cache, getPreferenceValues, showHUD, open } from "@raycast/api";
+import { MenuBarExtra, openCommandPreferences, Icon, Cache, getPreferenceValues, open } from "@raycast/api";
 import { useEffect, useState, useRef, Fragment } from "react";
 import { callService, Preferences } from "./api";
 import { useSonosPlayers } from "./useSonosPlayers";
@@ -10,11 +10,6 @@ export default function Command() {
   
   const [pinnedSpeaker, setPinnedSpeaker] = useState<string | undefined>(cache.get("pinnedSpeaker"));
   const [pinTrackName, setPinTrackName] = useState<boolean>(cache.get("pinTrackName") === "true");
-  const [showHUDAlert, setShowHUDAlert] = useState<boolean>(() => {
-    const cached = cache.get("showHUDAlert");
-    if (cached !== undefined) return cached === "true";
-    return prefs.showHudOnTrackChange === true;
-  });
 
   const debugLog = (...args: any[]) => {
     if (prefs.debugLogging) console.log(new Date().toISOString(), "[DEBUG]", ...args);
@@ -84,7 +79,7 @@ export default function Command() {
     })()
   );
 
-  // Monitor ALL speakers for track changes to trigger HUD and History
+  // Monitor ALL speakers for track changes to trigger History
   useEffect(() => {
     let triggeredChange = false;
 
@@ -94,24 +89,20 @@ export default function Command() {
         : "";
 
       if (trackString && trackString !== lastTracksRef.current[player.entity_id]) {
-        // Track changed for this specific player!
-        if (showHUDAlert) {
-          showHUD(`[${player.groupName}] ▶ ${trackString}`);
+        // Add to history if it's not empty
+        if (trackString !== "Idle" && trackString !== "Offline") {
+          setTrackHistory(prev => {
+            const historyEntry = `[${player.groupName}] ${trackString}`;
+            // Prevent rapid back-to-back duplicates for the same speaker
+            if (prev.length > 0 && prev[0].track === historyEntry) {
+              return prev;
+            }
+            const newHistory = [{ track: historyEntry, timestamp: Date.now() }, ...prev];
+            const trimmedHistory = newHistory.slice(0, 10);
+            cache.set("trackHistory", JSON.stringify(trimmedHistory));
+            return trimmedHistory;
+          });
         }
-
-        const historyEntry = `[${player.groupName}] ${trackString}`;
-        
-        setTrackHistory(prev => {
-          // Prevent rapid back-to-back duplicates for the same speaker
-          if (prev.length > 0 && prev[0].track === historyEntry) {
-            return prev;
-          }
-          const newHistory = [{ track: historyEntry, timestamp: Date.now() }, ...prev];
-          const trimmedHistory = newHistory.slice(0, 10);
-          cache.set("trackHistory", JSON.stringify(trimmedHistory));
-          return trimmedHistory;
-        });
-
         triggeredChange = true;
       }
       lastTracksRef.current[player.entity_id] = trackString;
@@ -120,8 +111,7 @@ export default function Command() {
     if (triggeredChange) {
       cache.set("lastTracks", JSON.stringify(lastTracksRef.current));
     }
-  }, [allPlayers, showHUDAlert]);
-
+  }, [allPlayers]);
 
   const handlePlayPause = async (entityId: string) => {
     await callService("media_player", "media_play_pause", { entity_id: entityId });
@@ -169,11 +159,6 @@ export default function Command() {
     setPinnedSpeaker(undefined);
   };
 
-  const toggleHUDAlert = () => {
-    const newVal = !showHUDAlert;
-    cache.set("showHUDAlert", newVal ? "true" : "false");
-    setShowHUDAlert(newVal);
-  };
 
   const renderExactVolumeSubmenu = (members: any[], title = "Set Exact Volume") => (
     <MenuBarExtra.Submenu title={title} icon={Icon.Speaker}>
@@ -383,11 +368,6 @@ export default function Command() {
       )}
       
       <MenuBarExtra.Section>
-        <MenuBarExtra.Item 
-          title={showHUDAlert ? "Disable Toast Notifications" : "Enable Toast Notifications"} 
-          icon={showHUDAlert ? Icon.EyeDisabled : Icon.Eye}
-          onAction={toggleHUDAlert} 
-        />
         <MenuBarExtra.Item title="Preferences..." onAction={openCommandPreferences} shortcut={{ modifiers: ["cmd"], key: "," }} />
       </MenuBarExtra.Section>
     </MenuBarExtra>

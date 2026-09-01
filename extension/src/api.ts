@@ -18,7 +18,6 @@ export interface Preferences {
   defaultSpeaker?: string;
   includeEntities?: string;
   flashTrackName?: boolean;
-  showHudOnTrackChange?: boolean;
   debugLogging?: boolean;
 }
 

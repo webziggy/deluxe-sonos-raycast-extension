@@ -63,9 +63,6 @@
       "default": true
     },
     {
-      "name": "showHudOnTrackChange",
-      "type": "checkbox",
-      "required": false,
       "label": "Show Toast on track change",
       "title": "Notifications",
       "description": "Show a brief popup notification when a new track starts.",
