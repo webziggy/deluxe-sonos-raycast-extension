@@ -42,7 +42,7 @@ export default function Command() {
     return lines;
   };
 
-  const { players: allPlayers, isLoading, error, companionActive } = useSonosPlayers();
+  const { players: allPlayers, isLoading, error, companionActive, sleepTimers } = useSonosPlayers();
 
   // Use absolute time to avoid macOS App Nap freezing our timers
 
@@ -403,6 +403,14 @@ export default function Command() {
                />
              ))}
           </MenuBarExtra.Submenu>
+          
+          {sleepTimers[player.entity_id] && (
+            <MenuBarExtra.Item 
+              title={`Sleep Timer Active: ${sleepTimers[player.entity_id]}`} 
+              icon={Icon.Stopwatch} 
+            />
+          )}
+
           <MenuBarExtra.Item 
             title="Clear Sleep Timer" 
             icon={Icon.Trash} 

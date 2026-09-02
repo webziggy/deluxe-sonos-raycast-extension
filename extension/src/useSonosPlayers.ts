@@ -11,6 +11,7 @@ interface UseSonosPlayersResult {
   isLoading: boolean;
   error?: string;
   companionActive: boolean;
+  sleepTimers: Record<string, string>;
 }
 
 export function useSonosPlayers(): UseSonosPlayersResult {
@@ -24,6 +25,7 @@ export function useSonosPlayers(): UseSonosPlayersResult {
   const [isLoading, setIsLoading] = useState(!cache.has("sonosPlayers"));
   const [error, setError] = useState<string>();
   const [companionActive, setCompanionActive] = useState<boolean>(false);
+  const [sleepTimers, setSleepTimers] = useState<Record<string, string>>({});
   
   const lastJsonRef = useRef(cache.get("sonosPlayers") || "");
 
@@ -33,6 +35,31 @@ export function useSonosPlayers(): UseSonosPlayersResult {
       if (isActive) console.log("Sonos Companion App detected and active!");
     });
   }, []);
+
+  useEffect(() => {
+    if (!companionActive || players.length === 0) return;
+
+    // We only poll root players to save network spam
+    const rootPlayers = filterSonosPlayers(players);
+
+    const pollTimers = async () => {
+      const newTimers: Record<string, string> = {};
+      import("./companionClient").then(async ({ getCompanionSleepTimer }) => {
+        for (const p of rootPlayers) {
+          const name = p.attributes?.friendly_name;
+          if (name) {
+            const timer = await getCompanionSleepTimer(name);
+            if (timer) newTimers[p.entity_id] = timer;
+          }
+        }
+        setSleepTimers(newTimers);
+      });
+    };
+
+    pollTimers();
+    const interval = setInterval(pollTimers, 10000);
+    return () => clearInterval(interval);
+  }, [companionActive, players]);
 
   useEffect(() => {
     let unsubscribe: () => void;
@@ -129,5 +156,5 @@ export function useSonosPlayers(): UseSonosPlayersResult {
     };
   }, []);
 
-  return { players, isLoading, error, companionActive };
+  return { players, isLoading, error, companionActive, sleepTimers };
 }
