@@ -96,17 +96,12 @@ void main() async {
   await menu.buildFrom([
     MenuItemLabel(label: 'Sonos Companion Running', enabled: false),
     MenuSeparator(),
-    SubMenu(
-      label: 'Notification Position',
-      children: [
-        MenuItemLabel(label: 'Top Right', onClicked: (_) => updateAlignment('Top Right')),
-        MenuItemLabel(label: 'Top Left', onClicked: (_) => updateAlignment('Top Left')),
-        MenuItemLabel(label: 'Top Center', onClicked: (_) => updateAlignment('Top Center')),
-        MenuItemLabel(label: 'Bottom Right', onClicked: (_) => updateAlignment('Bottom Right')),
-        MenuItemLabel(label: 'Bottom Left', onClicked: (_) => updateAlignment('Bottom Left')),
-        MenuItemLabel(label: 'Bottom Center', onClicked: (_) => updateAlignment('Bottom Center')),
-      ],
-    ),
+    MenuItemLabel(label: 'Position: Top Right', onClicked: (_) => updateAlignment('Top Right')),
+    MenuItemLabel(label: 'Position: Top Left', onClicked: (_) => updateAlignment('Top Left')),
+    MenuItemLabel(label: 'Position: Top Center', onClicked: (_) => updateAlignment('Top Center')),
+    MenuItemLabel(label: 'Position: Bottom Right', onClicked: (_) => updateAlignment('Bottom Right')),
+    MenuItemLabel(label: 'Position: Bottom Left', onClicked: (_) => updateAlignment('Bottom Left')),
+    MenuItemLabel(label: 'Position: Bottom Center', onClicked: (_) => updateAlignment('Bottom Center')),
     MenuSeparator(),
     MenuItemLabel(label: 'Quit', onClicked: (menuItem) async {
       await globalServer.stop();
