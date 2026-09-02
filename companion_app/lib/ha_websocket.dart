@@ -113,7 +113,14 @@ class HAWebSocket {
       // Only fire popup if it's playing
       if (state == 'playing') {
         final friendlyName = attrs['friendly_name'] ?? entityId;
-        final artUrl = attrs['entity_picture'] != null ? '$_url${attrs['entity_picture']}' : null;
+        String? artUrl;
+        if (attrs['entity_picture'] != null) {
+          final basePath = _url!.endsWith('/') ? _url!.substring(0, _url!.length - 1) : _url!;
+          final picturePath = attrs['entity_picture'].toString().startsWith('/') 
+              ? attrs['entity_picture'] 
+              : '/${attrs['entity_picture']}';
+          artUrl = '$basePath$picturePath';
+        }
         
         onTrackChange({
           'track': trackString,
