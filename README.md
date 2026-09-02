@@ -6,13 +6,16 @@ A native, blazing-fast Raycast extension to seamlessly control your Sonos ecosys
 ## Features
 
 - **🎵 Menu Bar Controller**: A native macOS menu bar dropdown for instantly controlling your pinned default speaker.
-- **🖼️ Rich Favourites Grid**: A beautiful Raycast Grid view that pulls in your Sonos radio stations and Spotify playlists with high-res album artwork.
-- **📋 Live Playback Queue**: A detailed List view showing the current playback queue for any speaker, with the ability to jump to tracks or remove them instantly.
+- **🖼️ Rich Favourites Grid**: A beautiful Raycast Grid view that pulls in your Sonos radio stations and Spotify playlists with high-res album artwork. Features 0ms caching for instant loading without a spinner.
+- **📋 Live Playback Queue**: A detailed List view showing the current playback queue for any speaker, with the ability to jump to tracks, remove them (`Cmd + Backspace`), or clear the entire queue (`Cmd + Shift + Backspace`).
 - **🤝 Intelligent Grouping**: Automatically detects grouped speakers, providing master controls alongside fully independent volume overrides for each member.
+- **🎉 Party Mode Grouping**: Includes a one-click "Group All (Party Mode)" button to instantly bind every standalone speaker on your network to the current room, and an "Ungroup All" button to shatter the group back to standalone speakers.
+- **🎚️ Dynamic Audio Settings**: Automatically sniffs and constructs native EQ sub-menus (Bass, Treble, Subwoofer Gain, Surround Level, Loudness) strictly matched to the physical capabilities of each individual speaker on your network.
+- **💤 Sleep Timers**: Instantly set or clear a sleep timer (15–120 minutes) directly from the menu bar. *(Note: While setting a timer works perfectly, Home Assistant does not expose the remaining countdown time as an entity, so the UI is currently limited to "fire-and-forget" commands).*
 - **📌 Pinned Speakers**: Pin your favorite speaker to the root of the menu bar for instant access.
 - **🕒 Contextual Track History**: Every speaker maintains its own dedicated "Recently Played" history right inside its sub-menu.
 - **🔍 Instant Web Search**: Click any currently playing track or history item to instantly look it up in your default browser.
-- **🚀 Zero Polling**: Uses a highly optimized WebSocket connection to Home Assistant for instant push-updates.
+- **🚀 Zero Polling & Resilient**: Uses a highly optimized WebSocket connection to Home Assistant for instant push-updates, complete with a lightweight background heartbeat to instantly recover the connection when macOS wakes from sleep.
 
 ## Setup Instructions
 

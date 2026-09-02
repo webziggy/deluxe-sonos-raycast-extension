@@ -1,4 +1,4 @@
-import { MenuBarExtra, openCommandPreferences, Icon, Cache, getPreferenceValues, open, launchCommand, LaunchType } from "@raycast/api";
+import { MenuBarExtra, openCommandPreferences, Icon, Cache, getPreferenceValues, open, launchCommand, LaunchType, showHUD } from "@raycast/api";
 import { useEffect, useState, useRef, Fragment } from "react";
 import { callService, Preferences } from "./api";
 import { useSonosPlayers } from "./useSonosPlayers";
@@ -367,15 +367,26 @@ export default function Command() {
         )}
 
         <MenuBarExtra.Section>
-          {player.sleepTimer ? (
-            <MenuBarExtra.Item title={`Cancel Sleep Timer (${player.sleepTimer})`} icon={Icon.Clock} onAction={() => callService("sonos", "clear_sleep_timer", { entity_id: player.entity_id })} />
-          ) : (
-            <MenuBarExtra.Submenu title="Set Sleep Timer..." icon={Icon.Clock}>
-               {[15, 30, 45, 60, 90, 120].map(mins => (
-                 <MenuBarExtra.Item key={mins} title={`${mins} Minutes`} onAction={() => callService("sonos", "set_sleep_timer", { entity_id: player.entity_id, sleep_time: mins * 60 })} />
-               ))}
-            </MenuBarExtra.Submenu>
-          )}
+          <MenuBarExtra.Submenu title="Set Sleep Timer..." icon={Icon.Clock}>
+             {[15, 30, 45, 60, 90, 120].map(mins => (
+               <MenuBarExtra.Item 
+                 key={mins} 
+                 title={`${mins} Minutes`} 
+                 onAction={async () => {
+                   await callService("sonos", "set_sleep_timer", { entity_id: player.entity_id, sleep_time: mins * 60 });
+                   await showHUD(`💤 Sleep timer set for ${mins} minutes`);
+                 }} 
+               />
+             ))}
+          </MenuBarExtra.Submenu>
+          <MenuBarExtra.Item 
+            title="Clear Sleep Timer" 
+            icon={Icon.Trash} 
+            onAction={async () => {
+              await callService("sonos", "clear_sleep_timer", { entity_id: player.entity_id });
+              await showHUD("☀️ Sleep timer cleared");
+            }} 
+          />
 
           {player.eq && Object.keys(player.eq).length > 0 && (
             <MenuBarExtra.Submenu title="Audio Settings..." icon={Icon.LevelMeter}>

@@ -41,6 +41,11 @@ export function useSonosPlayers() {
             player.speechEnhancementEntityId = speechEnhancement.entity_id;
           }
           
+          if (baseName === "bedroomsonos" || baseName === "bedroom") {
+             console.log("[DEBUG PLAYER ATTRS KEYS]:", Object.keys(newEntities[player.entity_id]?.attributes || {}).join(", "));
+             console.log("[DEBUG ALL SLEEP ENTITIES]:", Object.keys(newEntities).filter(k => k.includes("sleep") || k.includes("timer")).join(", "));
+          }
+          
           // Sniff for EQ Settings
           player.eq = {};
           ["bass", "treble", "sub_gain", "surround_level", "audio_delay"].forEach(eqType => {
@@ -89,7 +94,7 @@ export function useSonosPlayers() {
         if (connection.socket && connection.socket.readyState === 1) { // WebSocket.OPEN
           connection.sendMessagePromise({ type: "ping" }).catch(() => {
             console.log("[DEBUG] Ping failed, forcing reconnect.");
-            connection.socket.close(); // Forces home-assistant-js-websocket to automatically reconnect
+            connection.socket?.close(); // Forces home-assistant-js-websocket to automatically reconnect
           });
         }
       }, 30000);
