@@ -4,7 +4,9 @@ import FlutterMacOS
 class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
-    let windowFrame = self.frame
+    var windowFrame = self.frame
+    // Spawn off-screen to prevent the brief black flash on launch!
+    windowFrame.origin = NSPoint(x: -10000, y: -10000)
     self.contentViewController = flutterViewController
     self.setFrame(windowFrame, display: true)
     
