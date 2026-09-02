@@ -4,8 +4,9 @@ import 'package:window_manager/window_manager.dart';
 
 class NotificationPopup extends StatefulWidget {
   final Stream<Map<String, dynamic>> notificationStream;
+  final String alignment;
 
-  const NotificationPopup({super.key, required this.notificationStream});
+  const NotificationPopup({super.key, required this.notificationStream, required this.alignment});
 
   @override
   State<NotificationPopup> createState() => _NotificationPopupState();
@@ -26,13 +27,35 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
       duration: const Duration(milliseconds: 400),
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0), // Slide in from the right
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
-
+    _updateSlideAnimation();
     widget.notificationStream.listen(_handleNotification);
   }
+
+  @override
+  void didUpdateWidget(NotificationPopup oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.alignment != widget.alignment) {
+      _updateSlideAnimation();
+    }
+  }
+
+  void _updateSlideAnimation() {
+    Offset beginOffset;
+    if (widget.alignment.contains('Left')) {
+      beginOffset = const Offset(-1.0, 0.0);
+    } else if (widget.alignment == 'Top Center') {
+      beginOffset = const Offset(0.0, -1.0);
+    } else if (widget.alignment == 'Bottom Center') {
+      beginOffset = const Offset(0.0, 1.0);
+    } else {
+      beginOffset = const Offset(1.0, 0.0); // Defaults to Right
+    }
+
+    _slideAnimation = Tween<Offset>(
+      begin: beginOffset,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
+  }
+
 
   void _handleNotification(Map<String, dynamic> data) async {
     setState(() {

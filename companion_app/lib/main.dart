@@ -19,6 +19,8 @@ class MyHttpOverrides extends HttpOverrides {
   }
 }
 
+final ValueNotifier<String> alignmentNotifier = ValueNotifier<String>('Top Right');
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MyHttpOverrides();
@@ -44,7 +46,6 @@ void main() async {
 
   // Init HA WebSocket
   haWebSocket = HAWebSocket(onTrackChange: (trackData) {
-    // Pipe the WebSocket event into the local server's stream so the UI picks it up
     globalServer.triggerNotifyLocally(trackData);
   });
 
@@ -72,11 +73,14 @@ void main() async {
 
   Future<void> updateAlignment(String alignment) async {
     await AppConfig.saveAlignment(alignment);
+    alignmentNotifier.value = alignment;
     Alignment uiAlign = Alignment.topRight;
     switch (alignment) {
       case 'Top Right': uiAlign = Alignment.topRight; break;
+      case 'Top Left': uiAlign = Alignment.topLeft; break;
       case 'Top Center': uiAlign = Alignment.topCenter; break;
       case 'Bottom Right': uiAlign = Alignment.bottomRight; break;
+      case 'Bottom Left': uiAlign = Alignment.bottomLeft; break;
       case 'Bottom Center': uiAlign = Alignment.bottomCenter; break;
     }
     await windowManager.setAlignment(uiAlign);
@@ -94,8 +98,10 @@ void main() async {
       label: 'Notification Position',
       children: [
         MenuItemLabel(label: 'Top Right', onClicked: (_) => updateAlignment('Top Right')),
+        MenuItemLabel(label: 'Top Left', onClicked: (_) => updateAlignment('Top Left')),
         MenuItemLabel(label: 'Top Center', onClicked: (_) => updateAlignment('Top Center')),
         MenuItemLabel(label: 'Bottom Right', onClicked: (_) => updateAlignment('Bottom Right')),
+        MenuItemLabel(label: 'Bottom Left', onClicked: (_) => updateAlignment('Bottom Left')),
         MenuItemLabel(label: 'Bottom Center', onClicked: (_) => updateAlignment('Bottom Center')),
       ],
     ),
@@ -125,7 +131,15 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.transparent, 
       ),
       home: Scaffold(
-        body: NotificationPopup(notificationStream: globalServer.onNotify),
+        body: ValueListenableBuilder<String>(
+          valueListenable: alignmentNotifier,
+          builder: (context, alignment, child) {
+            return NotificationPopup(
+              notificationStream: globalServer.onNotify,
+              alignment: alignment,
+            );
+          },
+        ),
       ),
     );
   }
