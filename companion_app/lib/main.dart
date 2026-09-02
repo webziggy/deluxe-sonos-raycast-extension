@@ -69,7 +69,7 @@ void main() async {
   // Initialize System Tray
   final SystemTray systemTray = SystemTray();
   await systemTray.initSystemTray(
-    title: "Sonos",
+    title: "",
     iconPath: Platform.isWindows ? 'assets/app_icon.ico' : 'assets/app_icon.png',
   );
 
