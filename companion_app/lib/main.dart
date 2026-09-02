@@ -4,6 +4,9 @@ import 'package:window_manager/window_manager.dart';
 import 'dart:io';
 
 import 'server.dart';
+import 'popup.dart';
+
+late LocalServer globalServer;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,20 +14,24 @@ void main() async {
   // Hide the default window on launch (so it runs purely in the background)
   await windowManager.ensureInitialized();
   WindowOptions windowOptions = WindowOptions(
-    size: Size(400, 150),
-    center: true,
+    size: Size(350, 130),
+    center: false,
     backgroundColor: Colors.transparent,
     skipTaskbar: true,
     titleBarStyle: TitleBarStyle.hidden,
+    alwaysOnTop: true,
   );
   
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
+    // Position it at the top right, similar to macOS notifications
+    // Note: To get precise display bounds we'd use screen_retriever, but top right with a hardcoded offset works for now.
+    await windowManager.setAlignment(Alignment.topRight);
     await windowManager.hide();
   });
 
   // Start the background server
-  final server = LocalServer();
-  await server.start();
+  globalServer = LocalServer();
+  await globalServer.start();
 
   // Initialize System Tray
   final SystemTray systemTray = SystemTray();
@@ -38,7 +45,7 @@ void main() async {
     MenuItemLabel(label: 'Sonos Companion Running', enabled: false),
     MenuSeparator(),
     MenuItemLabel(label: 'Quit', onClicked: (menuItem) async {
-      await server.stop();
+      await globalServer.stop();
       exit(0);
     }),
   ]);
@@ -58,10 +65,11 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
-        // Make scaffold transparent for our custom popup
         scaffoldBackgroundColor: Colors.transparent, 
       ),
-      home: const Placeholder(), // We will build the visual popup later
+      home: Scaffold(
+        body: NotificationPopup(notificationStream: globalServer.onNotify),
+      ),
     );
   }
 }
