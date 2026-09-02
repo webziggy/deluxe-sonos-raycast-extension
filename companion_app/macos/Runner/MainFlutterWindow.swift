@@ -22,6 +22,17 @@ class MainFlutterWindow: NSWindow {
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 
+    // Never steal mouse clicks
+    self.ignoresMouseEvents = true
+
     super.awakeFromNib()
+  }
+
+  override var canBecomeKey: Bool {
+    return false
+  }
+
+  override var canBecomeMain: Bool {
+    return false
   }
 }

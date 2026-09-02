@@ -86,6 +86,14 @@ void main() async {
       case 'Bottom Center': uiAlign = Alignment.bottomCenter; break;
     }
     await windowManager.setAlignment(uiAlign);
+    
+    // Show a preview notification
+    globalServer.triggerNotifyLocally({
+      'track': 'Position Preview: $alignment',
+      'speaker': 'Sonos System',
+      'artUrl': null,
+      'haToken': null,
+    });
   }
 
   Future<void> updateCardSize(String size) async {
@@ -98,6 +106,27 @@ void main() async {
       case 'Large': uiSize = const Size(600, 210); break;
     }
     await windowManager.setSize(uiSize);
+    
+    // Re-apply alignment so the window shifts correctly based on new size
+    final currentAlignment = alignmentNotifier.value;
+    Alignment uiAlign = Alignment.topRight;
+    switch (currentAlignment) {
+      case 'Top Right': uiAlign = Alignment.topRight; break;
+      case 'Top Left': uiAlign = Alignment.topLeft; break;
+      case 'Top Center': uiAlign = Alignment.topCenter; break;
+      case 'Bottom Right': uiAlign = Alignment.bottomRight; break;
+      case 'Bottom Left': uiAlign = Alignment.bottomLeft; break;
+      case 'Bottom Center': uiAlign = Alignment.bottomCenter; break;
+    }
+    await windowManager.setAlignment(uiAlign);
+    
+    // Show a preview notification
+    globalServer.triggerNotifyLocally({
+      'track': 'Size Preview: $size',
+      'speaker': 'Sonos System',
+      'artUrl': null,
+      'haToken': null,
+    });
   }
 
   // Restore saved alignment
