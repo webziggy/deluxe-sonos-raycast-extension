@@ -20,6 +20,7 @@ export function useSonosPlayers() {
 
   useEffect(() => {
     let unsubscribe: () => void;
+    let heartbeat: NodeJS.Timeout;
     
     getHAConnection().then((connection) => {
       unsubscribe = subscribeEntities(connection, (newEntities) => {
@@ -53,6 +54,17 @@ export function useSonosPlayers() {
         }
         setIsLoading(false);
       });
+      
+      // Lightweight Heartbeat to prevent silent drops
+      heartbeat = setInterval(() => {
+        if (connection.socket && connection.socket.readyState === 1) { // WebSocket.OPEN
+          connection.sendMessagePromise({ type: "ping" }).catch(() => {
+            console.log("[DEBUG] Ping failed, forcing reconnect.");
+            connection.socket.close(); // Forces home-assistant-js-websocket to automatically reconnect
+          });
+        }
+      }, 30000);
+      
     }).catch((err) => {
       console.error(err);
       setError(String(err));
@@ -60,6 +72,7 @@ export function useSonosPlayers() {
     });
 
     return () => {
+      if (heartbeat) clearInterval(heartbeat);
       if (unsubscribe) {
         unsubscribe();
       }

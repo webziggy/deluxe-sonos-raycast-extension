@@ -373,6 +373,16 @@ export default function Command() {
 
         <MenuBarExtra.Section>
           <MenuBarExtra.Submenu title="Group With..." icon={Icon.Plus}>
+            <MenuBarExtra.Item 
+              title="Group All (Party Mode)" 
+              icon={Icon.Music} 
+              onAction={() => {
+                const others = allPlayers.filter(p => p.entity_id !== player.entity_id).map(p => p.entity_id);
+                if (others.length > 0) {
+                  callService("media_player", "join", { entity_id: player.entity_id, group_members: others });
+                }
+              }}
+            />
             {allPlayers.filter(p => p.entity_id !== player.entity_id).map(other => (
               <MenuBarExtra.Item 
                 key={other.entity_id} 
@@ -383,6 +393,17 @@ export default function Command() {
           </MenuBarExtra.Submenu>
           {player.groupMembers.length > 1 && (
             <MenuBarExtra.Submenu title="Ungroup Speakers" icon={Icon.Minus}>
+              <MenuBarExtra.Item 
+                title="Ungroup All" 
+                icon={Icon.MinusCircle} 
+                onAction={() => {
+                  player.groupMembers.forEach((m: any) => {
+                    if (m.entity_id !== player.entity_id) {
+                      callService("media_player", "unjoin", { entity_id: m.entity_id });
+                    }
+                  });
+                }}
+              />
               {player.groupMembers.map((m: any) => (
                 <MenuBarExtra.Item 
                   key={m.entity_id} 

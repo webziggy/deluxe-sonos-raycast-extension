@@ -65,6 +65,12 @@ export default function Command(props: LaunchProps<{ launchContext?: { entityId?
     setQueue(q => q.filter((_, i) => i !== index));
   };
 
+  const handleClearQueue = async () => {
+    if (!selectedSpeaker) return;
+    await callService("media_player", "clear_playlist", { entity_id: selectedSpeaker });
+    setQueue([]);
+  };
+
   return (
     <List 
       isLoading={playersLoading || queueLoading} 
@@ -103,7 +109,8 @@ export default function Command(props: LaunchProps<{ launchContext?: { entityId?
           actions={
             <ActionPanel>
               <Action title="Play Now" icon={Icon.Play} onAction={() => handlePlayQueueItem(index)} />
-              <Action title="Remove from Queue" icon={Icon.Trash} style={Action.Style.Destructive} onAction={() => handleRemoveQueueItem(index)} />
+              <Action title="Remove from Queue" icon={Icon.Trash} style={Action.Style.Destructive} shortcut={{ modifiers: ["cmd"], key: "backspace" }} onAction={() => handleRemoveQueueItem(index)} />
+              <Action title="Clear Entire Queue" icon={Icon.ExclamationMark} style={Action.Style.Destructive} shortcut={{ modifiers: ["cmd", "shift"], key: "backspace" }} onAction={() => handleClearQueue()} />
               <Action title="Open Preferences" icon={Icon.Gear} onAction={openCommandPreferences} shortcut={{ modifiers: ["cmd"], key: "," }} />
             </ActionPanel>
           }

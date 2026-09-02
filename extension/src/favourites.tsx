@@ -9,7 +9,10 @@ export default function Command(props: LaunchProps<{ launchContext?: { entityId?
   const { players: sonosPlayers, isLoading, error } = useSonosPlayers();
   
   const [selectedSpeaker, setSelectedSpeaker] = useState<string>(props.launchContext?.entityId || "");
-  const [favourites, setFavourites] = useState<{title: string, items: any[]}[]>([]);
+  const [favourites, setFavourites] = useState<{title: string, items: any[]}[]>(() => {
+    const cached = cache.get("favourites");
+    return cached ? JSON.parse(cached) : [];
+  });
   const [favsLoading, setFavsLoading] = useState(false);
 
   useEffect(() => {
@@ -58,6 +61,7 @@ export default function Command(props: LaunchProps<{ launchContext?: { entityId?
         }
         
         setFavourites(newSections);
+        cache.set("favourites", JSON.stringify(newSections));
         setFavsLoading(false);
       }).catch((err) => {
         console.error("Failed to fetch favourites", err);
