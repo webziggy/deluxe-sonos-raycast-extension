@@ -225,7 +225,7 @@ export default function Command() {
         <MenuBarExtra.Section title="Controls">
           <MenuBarExtra.Item 
             title={state === "playing" ? "Pause" : "Play"} 
-            icon={state === "playing" ? Icon.Pause : Icon.Play}
+            icon={state === "playing" ? Icon.Pause : Icon.Play} 
             shortcut={isRoot ? { modifiers: ["cmd"], key: "p" } : undefined}
             onAction={() => handlePlayPause(player.entity_id)} 
           />
