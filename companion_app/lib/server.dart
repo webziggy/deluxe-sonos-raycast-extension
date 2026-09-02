@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
@@ -5,10 +6,14 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as io;
 import 'package:shelf_router/shelf_router.dart';
 import 'package:uuid/uuid.dart';
+import 'sonos_upnp.dart';
 
 class LocalServer {
   late HttpServer _server;
   late String _secretToken;
+
+  final _notifyController = StreamController<Map<String, dynamic>>.broadcast();
+  Stream<Map<String, dynamic>> get onNotify => _notifyController.stream;
 
   Future<void> start() async {
     _secretToken = Uuid().v4();
@@ -31,11 +36,28 @@ class LocalServer {
         final payload = await request.readAsString();
         final data = jsonDecode(payload);
         print('Received notification request: $data');
-        // TODO: Trigger Flutter UI popup
+        _notifyController.add(data);
         return Response.ok(jsonEncode({'success': true}));
       } catch (e) {
         return Response.badRequest(body: 'Invalid JSON payload');
       }
+    });
+
+    // Sleep Timer UPnP endpoint
+    router.get('/sleep-timer', (Request request) async {
+      final auth = request.headers['authorization'];
+      if (auth != 'Bearer $_secretToken') {
+        return Response.forbidden('Invalid or missing token');
+      }
+
+      final speakerName = request.url.queryParameters['speaker'];
+      if (speakerName == null) return Response.badRequest(body: 'Missing speaker name');
+
+      final ip = await SonosUPnP.discoverSpeakerIP(speakerName);
+      if (ip == null) return Response.notFound('Speaker not found on local network');
+
+      final timeStr = await SonosUPnP.getSleepTimer(ip);
+      return Response.ok(jsonEncode({'remaining': timeStr}), headers: {'content-type': 'application/json'});
     });
 
     // We bind to port 0 to let the OS assign an available port automatically to avoid conflicts
