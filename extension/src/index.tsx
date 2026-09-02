@@ -241,6 +241,12 @@ export default function Command() {
             shortcut={isRoot ? { modifiers: ["cmd"], key: "arrowLeft" } : undefined}
             onAction={() => handlePrevious(player.entity_id)} 
           />
+          <MenuBarExtra.Item 
+            title="Open Queue..." 
+            icon={Icon.List} 
+            shortcut={isRoot ? { modifiers: ["cmd"], key: "o" } : undefined}
+            onAction={() => launchCommand({ name: "queue", type: LaunchType.UserInitiated, context: { entityId: player.entity_id } })} 
+          />
           {player.attributes?.shuffle !== undefined && (
             <MenuBarExtra.Item 
               title={`Shuffle: ${player.attributes.shuffle ? "On" : "Off"}`} 
@@ -352,8 +358,8 @@ export default function Command() {
           </MenuBarExtra.Section>
         )}
 
-        {sourceList.length > 0 && (
-          <MenuBarExtra.Section>
+        <MenuBarExtra.Section>
+          {sourceList.length > 0 && (
             <MenuBarExtra.Submenu title="Favourites" icon={Icon.Star}>
               {sourceList.map((source) => (
                 <MenuBarExtra.Item 
@@ -363,8 +369,14 @@ export default function Command() {
                 />
               ))}
             </MenuBarExtra.Submenu>
-          </MenuBarExtra.Section>
-        )}
+          )}
+          <MenuBarExtra.Item 
+            title="Open Favourites Grid..." 
+            icon={Icon.AppWindowGrid3x3} 
+            shortcut={isRoot ? { modifiers: ["cmd"], key: "f" } : undefined}
+            onAction={() => launchCommand({ name: "favourites", type: LaunchType.UserInitiated, context: { entityId: player.entity_id } })} 
+          />
+        </MenuBarExtra.Section>
 
         <MenuBarExtra.Section>
           <MenuBarExtra.Submenu title="Set Sleep Timer..." icon={Icon.Clock}>
@@ -411,19 +423,6 @@ export default function Command() {
                )}
             </MenuBarExtra.Submenu>
           )}
-          
-          <MenuBarExtra.Item 
-            title="Open Favourites..." 
-            icon={Icon.Star} 
-            shortcut={isRoot ? { modifiers: ["cmd"], key: "f" } : undefined}
-            onAction={() => launchCommand({ name: "favourites", type: LaunchType.UserInitiated, context: { entityId: player.entity_id } })} 
-          />
-          <MenuBarExtra.Item 
-            title="Open Queue..." 
-            icon={Icon.List} 
-            shortcut={isRoot ? { modifiers: ["cmd"], key: "o" } : undefined}
-            onAction={() => launchCommand({ name: "queue", type: LaunchType.UserInitiated, context: { entityId: player.entity_id } })} 
-          />
         </MenuBarExtra.Section>
 
         <MenuBarExtra.Section>
