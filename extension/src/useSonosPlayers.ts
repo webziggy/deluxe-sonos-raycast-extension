@@ -2,10 +2,18 @@ import { useState, useEffect, useRef } from "react";
 import { Cache, getPreferenceValues } from "@raycast/api";
 import { getHAConnection, filterSonosPlayers, getGroupedPlayers } from "./api";
 import { subscribeEntities } from "home-assistant-js-websocket";
+import { isCompanionActive, notifyCompanion } from "./companionClient";
 
 const cache = new Cache();
 
-export function useSonosPlayers() {
+interface UseSonosPlayersResult {
+  players: any[];
+  isLoading: boolean;
+  error?: string;
+  companionActive: boolean;
+}
+
+export function useSonosPlayers(): UseSonosPlayersResult {
   const [players, setPlayers] = useState<any[]>(() => {
     const cached = cache.get("sonosPlayers");
     if (cached) {
@@ -15,8 +23,16 @@ export function useSonosPlayers() {
   });
   const [isLoading, setIsLoading] = useState(!cache.has("sonosPlayers"));
   const [error, setError] = useState<string>();
+  const [companionActive, setCompanionActive] = useState<boolean>(false);
   
   const lastJsonRef = useRef(cache.get("sonosPlayers") || "");
+
+  useEffect(() => {
+    isCompanionActive().then(isActive => {
+      setCompanionActive(isActive);
+      if (isActive) console.log("Sonos Companion App detected and active!");
+    });
+  }, []);
 
   useEffect(() => {
     let unsubscribe: () => void;
@@ -113,5 +129,5 @@ export function useSonosPlayers() {
     };
   }, []);
 
-  return { players, isLoading, error };
+  return { players, isLoading, error, companionActive };
 }

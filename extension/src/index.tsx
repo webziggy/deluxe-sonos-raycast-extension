@@ -42,7 +42,7 @@ export default function Command() {
     return lines;
   };
 
-  const { players: allPlayers, isLoading, error } = useSonosPlayers();
+  const { players: allPlayers, isLoading, error, companionActive } = useSonosPlayers();
 
   // Use absolute time to avoid macOS App Nap freezing our timers
 
@@ -100,6 +100,18 @@ export default function Command() {
             const newHistory = [{ track: trackString, timestamp: Date.now() }, ...currentHistory].slice(0, 10);
             const nextState = { ...prev, [player.entity_id]: newHistory };
             cache.set("trackHistories", JSON.stringify(nextState));
+            
+            // Notify companion app if active
+            if (companionActive) {
+              import("./companionClient").then(({ notifyCompanion }) => {
+                notifyCompanion({
+                  track: trackString,
+                  speaker: player.attributes.friendly_name,
+                  artUrl: player.attributes.entity_picture ? `${getPreferenceValues().haUrl}${player.attributes.entity_picture}` : null
+                });
+              });
+            }
+
             return nextState;
           });
         }

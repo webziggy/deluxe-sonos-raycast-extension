@@ -45,9 +45,13 @@ class LocalServer {
     await _writeAuthFile();
   }
 
+  String _getAuthFilePath() {
+    String? home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+    return '$home/.sonos_companion_auth.json';
+  }
+
   Future<void> _writeAuthFile() async {
-    final dir = await getApplicationSupportDirectory();
-    final file = File('${dir.path}/.sonos_companion_auth.json');
+    final file = File(_getAuthFilePath());
     
     final data = {
       'port': _server.port,
@@ -60,8 +64,7 @@ class LocalServer {
 
   Future<void> stop() async {
     await _server.close();
-    final dir = await getApplicationSupportDirectory();
-    final file = File('${dir.path}/.sonos_companion_auth.json');
+    final file = File(_getAuthFilePath());
     if (await file.exists()) {
       await file.delete();
     }
