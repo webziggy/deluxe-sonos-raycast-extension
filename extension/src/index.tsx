@@ -101,17 +101,6 @@ export default function Command() {
             const nextState = { ...prev, [player.entity_id]: newHistory };
             cache.set("trackHistories", JSON.stringify(nextState));
             
-            // Notify companion app if active
-            if (companionActive) {
-              import("./companionClient").then(({ notifyCompanion }) => {
-                notifyCompanion({
-                  track: trackString,
-                  speaker: player.attributes.friendly_name,
-                  artUrl: player.attributes.entity_picture ? `${getPreferenceValues().haUrl}${player.attributes.entity_picture}` : null
-                });
-              });
-            }
-
             return nextState;
           });
         }

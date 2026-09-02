@@ -70,9 +70,35 @@ void main() async {
     iconPath: Platform.isWindows ? 'assets/app_icon.ico' : 'assets/app_icon.png',
   );
 
+  Future<void> updateAlignment(String alignment) async {
+    await AppConfig.saveAlignment(alignment);
+    Alignment uiAlign = Alignment.topRight;
+    switch (alignment) {
+      case 'Top Right': uiAlign = Alignment.topRight; break;
+      case 'Top Center': uiAlign = Alignment.topCenter; break;
+      case 'Bottom Right': uiAlign = Alignment.bottomRight; break;
+      case 'Bottom Center': uiAlign = Alignment.bottomCenter; break;
+    }
+    await windowManager.setAlignment(uiAlign);
+  }
+
+  // Restore saved alignment
+  final savedAlignment = savedConfig?['alignment'] as String? ?? 'Top Right';
+  await updateAlignment(savedAlignment);
+
   final Menu menu = Menu();
   await menu.buildFrom([
     MenuItemLabel(label: 'Sonos Companion Running', enabled: false),
+    MenuSeparator(),
+    SubMenu(
+      label: 'Notification Position',
+      children: [
+        MenuItemLabel(label: 'Top Right', onClicked: (_) => updateAlignment('Top Right')),
+        MenuItemLabel(label: 'Top Center', onClicked: (_) => updateAlignment('Top Center')),
+        MenuItemLabel(label: 'Bottom Right', onClicked: (_) => updateAlignment('Bottom Right')),
+        MenuItemLabel(label: 'Bottom Center', onClicked: (_) => updateAlignment('Bottom Center')),
+      ],
+    ),
     MenuSeparator(),
     MenuItemLabel(label: 'Quit', onClicked: (menuItem) async {
       await globalServer.stop();

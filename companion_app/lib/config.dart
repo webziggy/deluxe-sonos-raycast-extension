@@ -13,9 +13,23 @@ class AppConfig {
     if (!await file.parent.exists()) {
       await file.parent.create(recursive: true);
     }
+    final existing = await loadConfig();
     await file.writeAsString(jsonEncode({
+      ...existing ?? {},
       'haUrl': haUrl,
       'haToken': haToken,
+    }));
+  }
+
+  static Future<void> saveAlignment(String alignment) async {
+    final file = await _file;
+    if (!await file.parent.exists()) {
+      await file.parent.create(recursive: true);
+    }
+    final existing = await loadConfig();
+    await file.writeAsString(jsonEncode({
+      ...existing ?? {},
+      'alignment': alignment,
     }));
   }
 
