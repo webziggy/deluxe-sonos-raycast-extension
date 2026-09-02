@@ -40,6 +40,35 @@ export function useSonosPlayers() {
             player.speechEnhancement = speechEnhancement.state === "on";
             player.speechEnhancementEntityId = speechEnhancement.entity_id;
           }
+          
+          // Sniff for EQ Settings
+          player.eq = {};
+          ["bass", "treble", "sub_gain", "surround_level", "audio_delay"].forEach(eqType => {
+            const eqEntity = newEntities[`number.${baseName}_${eqType}`];
+            if (eqEntity) {
+              player.eq[eqType] = {
+                entity_id: eqEntity.entity_id,
+                value: Number(eqEntity.state),
+                min: Number(eqEntity.attributes.min ?? -10),
+                max: Number(eqEntity.attributes.max ?? 10),
+                step: Number(eqEntity.attributes.step ?? 1)
+              };
+            }
+          });
+          
+          const loudness = newEntities[`switch.${baseName}_loudness`];
+          if (loudness) {
+            player.eq.loudness = {
+              entity_id: loudness.entity_id,
+              state: loudness.state === "on"
+            };
+          }
+
+          // Sniff for Sleep Timer
+          const sleepTimer = newEntities[`sensor.${baseName}_sleep_timer`];
+          if (sleepTimer && sleepTimer.state !== "unavailable" && sleepTimer.state !== "idle") {
+            player.sleepTimer = sleepTimer.state; // Could be timestamp or remaining duration
+          }
         });
 
         const currentJson = JSON.stringify(groupedPlayers);

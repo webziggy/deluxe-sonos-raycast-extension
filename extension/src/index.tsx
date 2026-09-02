@@ -367,6 +367,36 @@ export default function Command() {
         )}
 
         <MenuBarExtra.Section>
+          {player.sleepTimer ? (
+            <MenuBarExtra.Item title={`Cancel Sleep Timer (${player.sleepTimer})`} icon={Icon.Clock} onAction={() => callService("sonos", "clear_sleep_timer", { entity_id: player.entity_id })} />
+          ) : (
+            <MenuBarExtra.Submenu title="Set Sleep Timer..." icon={Icon.Clock}>
+               {[15, 30, 45, 60, 90, 120].map(mins => (
+                 <MenuBarExtra.Item key={mins} title={`${mins} Minutes`} onAction={() => callService("sonos", "set_sleep_timer", { entity_id: player.entity_id, sleep_time: mins * 60 })} />
+               ))}
+            </MenuBarExtra.Submenu>
+          )}
+
+          {player.eq && Object.keys(player.eq).length > 0 && (
+            <MenuBarExtra.Submenu title="Audio Settings..." icon={Icon.LevelMeter}>
+               {["bass", "treble", "sub_gain", "surround_level", "audio_delay"].map(eqType => {
+                  const eq = player.eq[eqType];
+                  if (!eq) return null;
+                  const name = eqType.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+                  return (
+                    <MenuBarExtra.Submenu key={eqType} title={`${name}: ${eq.value}`} icon={Icon.LevelMeter}>
+                       {Array.from({length: Math.floor((eq.max - eq.min) / (eq.step || 1)) + 1}, (_, i) => eq.min + (i * (eq.step || 1))).filter(v => v % 2 === 0 || v === eq.max || v === eq.min).map(val => (
+                          <MenuBarExtra.Item key={val} title={`${val > 0 ? '+' : ''}${val}`} onAction={() => callService("number", "set_value", { entity_id: eq.entity_id, value: val })} />
+                       ))}
+                    </MenuBarExtra.Submenu>
+                  );
+               })}
+               {player.eq.loudness && (
+                  <MenuBarExtra.Item title={`Loudness: ${player.eq.loudness.state ? 'On' : 'Off'}`} icon={player.eq.loudness.state ? Icon.SpeakerOn : Icon.SpeakerOff} onAction={() => callService("switch", "toggle", { entity_id: player.eq.loudness.entity_id })} />
+               )}
+            </MenuBarExtra.Submenu>
+          )}
+          
           <MenuBarExtra.Item title="Open Favourites..." icon={Icon.Star} onAction={() => launchCommand({ name: "favourites", type: LaunchType.UserInitiated, context: { entityId: player.entity_id } })} />
           <MenuBarExtra.Item title="Open Queue..." icon={Icon.List} onAction={() => launchCommand({ name: "queue", type: LaunchType.UserInitiated, context: { entityId: player.entity_id } })} />
         </MenuBarExtra.Section>
