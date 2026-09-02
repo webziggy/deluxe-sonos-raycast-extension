@@ -4,12 +4,12 @@ import FlutterMacOS
 class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
-    let windowFrame = self.frame
+    var windowFrame = self.frame
+    // Spawn WAY off-screen to prevent the brief black flash on launch!
+    // We use a huge number so it doesn't accidentally hit a secondary monitor
+    windowFrame.origin = NSPoint(x: 1000000, y: 1000000)
     self.contentViewController = flutterViewController
-    // Hide the window natively immediately before display to prevent the flash
-    self.isReleasedWhenClosed = false
-    self.orderOut(nil)
-    self.setFrame(windowFrame, display: false)
+    self.setFrame(windowFrame, display: true)
     
     // Force transparency for borderless popup
     self.isOpaque = false
