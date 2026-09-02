@@ -27,6 +27,8 @@ void main() async {
   );
   
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.setAsFrameless();
+    await windowManager.setHasShadow(false);
     await windowManager.setAlignment(Alignment.topRight);
     await windowManager.hide();
   });

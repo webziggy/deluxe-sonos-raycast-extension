@@ -92,6 +92,9 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
               if (artUrl != null)
                 Image.network(
                   artUrl,
+                  headers: _currentData!['haToken'] != null 
+                      ? {'Authorization': 'Bearer ${_currentData!['haToken']}'} 
+                      : null,
                   width: 100,
                   height: 100,
                   fit: BoxFit.cover,

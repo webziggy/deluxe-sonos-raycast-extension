@@ -119,6 +119,7 @@ class HAWebSocket {
           'track': trackString,
           'speaker': friendlyName,
           'artUrl': artUrl,
+          'haToken': _token,
         });
       }
     }
