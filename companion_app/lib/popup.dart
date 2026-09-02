@@ -89,14 +89,12 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
     });
 
     // Make window visible and slide in
-    await windowManager.show();
     _animController.forward();
 
     // Reset the hide timer
     _hideTimer?.cancel();
     _hideTimer = Timer(const Duration(seconds: 5), () async {
       await _animController.reverse();
-      await windowManager.hide();
     });
   }
 

@@ -42,8 +42,7 @@ void main() async {
     await windowManager.setAsFrameless();
     await windowManager.setHasShadow(false);
     await windowManager.setAlignment(Alignment.topRight);
-    await windowManager.hide();
-    // Restore opacity now that the window is safely hidden from the window server
+    await windowManager.show();
   });
 
   // Init HA WebSocket
@@ -70,7 +69,7 @@ void main() async {
   final SystemTray systemTray = SystemTray();
   await systemTray.initSystemTray(
     title: "",
-    iconPath: Platform.isWindows ? 'assets/app_icon.ico' : 'assets/app_icon.png',
+    iconPath: Platform.isWindows ? 'assets/app_icon.ico' : 'assets/app_iconTemplate.png',
   );
 
   Future<void> updateAlignment(String alignment) async {
