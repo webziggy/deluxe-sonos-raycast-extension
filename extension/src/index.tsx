@@ -396,8 +396,12 @@ export default function Command() {
                   const name = eqType.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
                   return (
                     <MenuBarExtra.Submenu key={eqType} title={`${name}: ${eq.value}`} icon={Icon.LevelMeter}>
-                       {Array.from({length: Math.floor((eq.max - eq.min) / (eq.step || 1)) + 1}, (_, i) => eq.min + (i * (eq.step || 1))).filter(v => v % 2 === 0 || v === eq.max || v === eq.min).map(val => (
-                          <MenuBarExtra.Item key={val} title={`${val > 0 ? '+' : ''}${val}`} onAction={() => callService("number", "set_value", { entity_id: eq.entity_id, value: val })} />
+                       {Array.from({length: Math.floor((eq.max - eq.min) / (eq.step || 1)) + 1}, (_, i) => eq.min + (i * (eq.step || 1))).filter(v => v % 2 === 0 || v === eq.max || v === eq.min).reverse().map(val => (
+                          <MenuBarExtra.Item 
+                            key={val} 
+                            title={`Set to ${val > 0 ? '+' : ''}${val}${val === 0 ? ' (Default)' : ''}`} 
+                            onAction={() => callService("number", "set_value", { entity_id: eq.entity_id, value: val })} 
+                          />
                        ))}
                     </MenuBarExtra.Submenu>
                   );
