@@ -33,6 +33,18 @@ class AppConfig {
     }));
   }
 
+  static Future<void> saveCardSize(String size) async {
+    final file = await _file;
+    if (!await file.parent.exists()) {
+      await file.parent.create(recursive: true);
+    }
+    final existing = await loadConfig();
+    await file.writeAsString(jsonEncode({
+      ...existing ?? {},
+      'cardSize': size,
+    }));
+  }
+
   static Future<Map<String, dynamic>?> loadConfig() async {
     try {
       final file = await _file;

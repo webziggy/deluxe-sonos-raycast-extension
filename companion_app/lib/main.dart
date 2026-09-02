@@ -20,6 +20,7 @@ class MyHttpOverrides extends HttpOverrides {
 }
 
 final ValueNotifier<String> alignmentNotifier = ValueNotifier<String>('Top Right');
+final ValueNotifier<String> cardSizeNotifier = ValueNotifier<String>('Small');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -87,13 +88,33 @@ void main() async {
     await windowManager.setAlignment(uiAlign);
   }
 
+  Future<void> updateCardSize(String size) async {
+    await AppConfig.saveCardSize(size);
+    cardSizeNotifier.value = size;
+    Size uiSize = const Size(350, 130);
+    switch (size) {
+      case 'Small': uiSize = const Size(350, 130); break;
+      case 'Medium': uiSize = const Size(450, 160); break;
+      case 'Large': uiSize = const Size(600, 210); break;
+    }
+    await windowManager.setSize(uiSize);
+  }
+
   // Restore saved alignment
   final savedAlignment = savedConfig?['alignment'] as String? ?? 'Top Right';
   await updateAlignment(savedAlignment);
 
+  // Restore saved size
+  final savedSize = savedConfig?['cardSize'] as String? ?? 'Small';
+  await updateCardSize(savedSize);
+
   final Menu menu = Menu();
   await menu.buildFrom([
     MenuItemLabel(label: 'Sonos Companion Running', enabled: false),
+    MenuSeparator(),
+    MenuItemLabel(label: 'Size: Small', onClicked: (_) => updateCardSize('Small')),
+    MenuItemLabel(label: 'Size: Medium', onClicked: (_) => updateCardSize('Medium')),
+    MenuItemLabel(label: 'Size: Large', onClicked: (_) => updateCardSize('Large')),
     MenuSeparator(),
     MenuItemLabel(label: 'Position: Top Right', onClicked: (_) => updateAlignment('Top Right')),
     MenuItemLabel(label: 'Position: Top Left', onClicked: (_) => updateAlignment('Top Left')),
@@ -140,9 +161,15 @@ class MyApp extends StatelessWidget {
         body: ValueListenableBuilder<String>(
           valueListenable: alignmentNotifier,
           builder: (context, alignment, child) {
-            return NotificationPopup(
-              notificationStream: globalServer.onNotify,
-              alignment: alignment,
+            return ValueListenableBuilder<String>(
+              valueListenable: cardSizeNotifier,
+              builder: (context, size, child) {
+                return NotificationPopup(
+                  notificationStream: globalServer.onNotify,
+                  alignment: alignment,
+                  cardSize: size,
+                );
+              },
             );
           },
         ),

@@ -5,8 +5,14 @@ import 'package:window_manager/window_manager.dart';
 class NotificationPopup extends StatefulWidget {
   final Stream<Map<String, dynamic>> notificationStream;
   final String alignment;
+  final String cardSize;
 
-  const NotificationPopup({super.key, required this.notificationStream, required this.alignment});
+  const NotificationPopup({
+    super.key, 
+    required this.notificationStream, 
+    required this.alignment,
+    required this.cardSize,
+  });
 
   @override
   State<NotificationPopup> createState() => _NotificationPopupState();
@@ -59,6 +65,19 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
 
 
   void _handleNotification(Map<String, dynamic> data) async {
+    // Precache the image before sliding in!
+    if (data['artUrl'] != null) {
+      final imageProvider = NetworkImage(
+        data['artUrl'],
+        headers: data['haToken'] != null ? {'Authorization': 'Bearer ${data['haToken']}'} : null,
+      );
+      try {
+        await precacheImage(imageProvider, context);
+      } catch (e) {
+        debugPrint('Failed to precache image: $e');
+      }
+    }
+
     setState(() {
       _currentData = data;
     });
@@ -90,6 +109,20 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
     final speaker = _currentData!['speaker'] ?? 'Unknown Speaker';
     final artUrl = _currentData!['artUrl'];
 
+    // Dynamic Sizing
+    double imageSize = 98; // Small default
+    double titleSize = 12;
+    double trackSize = 16;
+    if (widget.cardSize == 'Medium') {
+      imageSize = 128;
+      titleSize = 14;
+      trackSize = 20;
+    } else if (widget.cardSize == 'Large') {
+      imageSize = 178;
+      titleSize = 18;
+      trackSize = 26;
+    }
+
     return SlideTransition(
       position: _slideAnimation,
       child: Container(
@@ -119,13 +152,13 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
                   headers: _currentData!['haToken'] != null 
                       ? {'Authorization': 'Bearer ${_currentData!['haToken']}'} 
                       : null,
-                  width: 100,
-                  height: 100,
+                  width: imageSize,
+                  height: imageSize,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => _buildFallbackArt(),
+                  errorBuilder: (context, error, stackTrace) => _buildFallbackArt(imageSize),
                 )
               else
-                _buildFallbackArt(),
+                _buildFallbackArt(imageSize),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -137,7 +170,7 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
                         'Now Playing on $speaker',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.6),
-                          fontSize: 12,
+                          fontSize: titleSize,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
                         ),
@@ -145,9 +178,9 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
                       const SizedBox(height: 4),
                       Text(
                         track,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: trackSize,
                           fontWeight: FontWeight.bold,
                         ),
                         maxLines: 2,
@@ -164,12 +197,12 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
     );
   }
 
-  Widget _buildFallbackArt() {
+  Widget _buildFallbackArt(double size) {
     return Container(
-      width: 100,
-      height: 100,
+      width: size,
+      height: size,
       color: Colors.grey[900],
-      child: const Icon(Icons.music_note, color: Colors.white54, size: 40),
+      child: Icon(Icons.music_note, color: Colors.white54, size: size * 0.4),
     );
   }
 }
