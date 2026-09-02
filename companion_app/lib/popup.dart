@@ -22,6 +22,7 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
   Map<String, dynamic>? _currentData;
   late AnimationController _animController;
   late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
   Timer? _hideTimer;
 
   @override
@@ -61,6 +62,11 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
       begin: beginOffset,
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.05, // Start from 5% instead of 0% as requested!
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeIn));
   }
 
 
@@ -125,9 +131,11 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
 
     return SlideTransition(
       position: _slideAnimation,
-      child: Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Container(
+          margin: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
           color: const Color(0xFF1E1E1E).withOpacity(0.95),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
@@ -194,7 +202,7 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
           ),
         ),
       ),
-    );
+    ),);
   }
 
   Widget _buildFallbackArt(double size) {
