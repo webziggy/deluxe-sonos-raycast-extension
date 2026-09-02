@@ -412,8 +412,18 @@ export default function Command() {
             </MenuBarExtra.Submenu>
           )}
           
-          <MenuBarExtra.Item title="Open Favourites..." icon={Icon.Star} onAction={() => launchCommand({ name: "favourites", type: LaunchType.UserInitiated, context: { entityId: player.entity_id } })} />
-          <MenuBarExtra.Item title="Open Queue..." icon={Icon.List} onAction={() => launchCommand({ name: "queue", type: LaunchType.UserInitiated, context: { entityId: player.entity_id } })} />
+          <MenuBarExtra.Item 
+            title="Open Favourites..." 
+            icon={Icon.Star} 
+            shortcut={isRoot ? { modifiers: ["cmd"], key: "f" } : undefined}
+            onAction={() => launchCommand({ name: "favourites", type: LaunchType.UserInitiated, context: { entityId: player.entity_id } })} 
+          />
+          <MenuBarExtra.Item 
+            title="Open Queue..." 
+            icon={Icon.List} 
+            shortcut={isRoot ? { modifiers: ["cmd"], key: "o" } : undefined}
+            onAction={() => launchCommand({ name: "queue", type: LaunchType.UserInitiated, context: { entityId: player.entity_id } })} 
+          />
         </MenuBarExtra.Section>
 
         <MenuBarExtra.Section>
@@ -421,6 +431,7 @@ export default function Command() {
             <MenuBarExtra.Item 
               title="Group All (Party Mode)" 
               icon={Icon.Music} 
+              shortcut={isRoot ? { modifiers: ["cmd"], key: "g" } : undefined}
               onAction={() => {
                 const others = allPlayers.filter(p => p.entity_id !== player.entity_id).map(p => p.entity_id);
                 if (others.length > 0) {

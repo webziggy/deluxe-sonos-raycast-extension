@@ -57,6 +57,9 @@ When the Sonos Menu Bar is open, you can use the following quick hotkeys:
 - **Volume Up**: `Cmd + +`
 - **Volume Down**: `Cmd + -`
 - **Toggle Mute**: `Cmd + M`
+- **Open Favourites**: `Cmd + F`
+- **Open Queue**: `Cmd + O`
+- **Group All (Party Mode)**: `Cmd + G`
 
 ---
 Built with ❤️ using the official Raycast API and the \`home-assistant-js-websocket\` library.
