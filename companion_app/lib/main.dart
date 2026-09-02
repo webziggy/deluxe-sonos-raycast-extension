@@ -5,33 +5,52 @@ import 'dart:io';
 
 import 'server.dart';
 import 'popup.dart';
+import 'ha_websocket.dart';
+import 'config.dart';
 
 late LocalServer globalServer;
+late HAWebSocket haWebSocket;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Hide the default window on launch (so it runs purely in the background)
+  // Hide the default window on launch
   await windowManager.ensureInitialized();
-  WindowOptions windowOptions = WindowOptions(
+  WindowOptions windowOptions = const WindowOptions(
     size: Size(350, 130),
     center: false,
     backgroundColor: Colors.transparent,
     skipTaskbar: true,
     titleBarStyle: TitleBarStyle.hidden,
+    windowButtonVisibility: false,
     alwaysOnTop: true,
   );
   
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
-    // Position it at the top right, similar to macOS notifications
-    // Note: To get precise display bounds we'd use screen_retriever, but top right with a hardcoded offset works for now.
     await windowManager.setAlignment(Alignment.topRight);
     await windowManager.hide();
   });
 
+  // Init HA WebSocket
+  haWebSocket = HAWebSocket(onTrackChange: (trackData) {
+    // Pipe the WebSocket event into the local server's stream so the UI picks it up
+    globalServer.triggerNotifyLocally(trackData);
+  });
+
   // Start the background server
-  globalServer = LocalServer();
+  globalServer = LocalServer(onConfigUpdate: (haUrl, haToken) async {
+    print('Received HA config from Raycast. Saving and connecting...');
+    await AppConfig.saveConfig(haUrl, haToken);
+    haWebSocket.connect(haUrl, haToken);
+  });
   await globalServer.start();
+
+  // Load existing config on boot
+  final savedConfig = await AppConfig.loadConfig();
+  if (savedConfig != null) {
+    print('Found saved HA config. Connecting...');
+    haWebSocket.connect(savedConfig['haUrl'], savedConfig['haToken']);
+  }
 
   // Initialize System Tray
   final SystemTray systemTray = SystemTray();
@@ -46,6 +65,7 @@ void main() async {
     MenuSeparator(),
     MenuItemLabel(label: 'Quit', onClicked: (menuItem) async {
       await globalServer.stop();
+      haWebSocket.dispose();
       exit(0);
     }),
   ]);

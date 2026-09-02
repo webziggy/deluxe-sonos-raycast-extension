@@ -11,9 +11,16 @@ import 'sonos_upnp.dart';
 class LocalServer {
   late HttpServer _server;
   late String _secretToken;
+  final Function(String haUrl, String haToken) onConfigUpdate;
 
   final _notifyController = StreamController<Map<String, dynamic>>.broadcast();
   Stream<Map<String, dynamic>> get onNotify => _notifyController.stream;
+
+  void triggerNotifyLocally(Map<String, dynamic> data) {
+    _notifyController.add(data);
+  }
+
+  LocalServer({required this.onConfigUpdate});
 
   Future<void> start() async {
     _secretToken = Uuid().v4();
@@ -58,6 +65,29 @@ class LocalServer {
 
       final timeStr = await SonosUPnP.getSleepTimer(ip);
       return Response.ok(jsonEncode({'remaining': timeStr}), headers: {'content-type': 'application/json'});
+    });
+
+    // Config endpoint
+    router.post('/config', (Request request) async {
+      final auth = request.headers['authorization'];
+      if (auth != 'Bearer $_secretToken') {
+        return Response.forbidden('Invalid or missing token');
+      }
+
+      try {
+        final payload = await request.readAsString();
+        final data = jsonDecode(payload);
+        final haUrl = data['haUrl'];
+        final haToken = data['haToken'];
+        
+        if (haUrl != null && haToken != null) {
+          onConfigUpdate(haUrl, haToken);
+          return Response.ok(jsonEncode({'success': true}));
+        }
+        return Response.badRequest(body: 'Missing haUrl or haToken');
+      } catch (e) {
+        return Response.badRequest(body: 'Invalid JSON payload');
+      }
     });
 
     // We bind to port 0 to let the OS assign an available port automatically to avoid conflicts

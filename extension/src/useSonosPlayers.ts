@@ -32,7 +32,13 @@ export function useSonosPlayers(): UseSonosPlayersResult {
   useEffect(() => {
     isCompanionActive().then(isActive => {
       setCompanionActive(isActive);
-      if (isActive) console.log("Sonos Companion App detected and active!");
+      if (isActive) {
+        console.log("Sonos Companion App detected and active!");
+        const prefs = getPreferenceValues();
+        import("./companionClient").then(({ sendConfigToCompanion }) => {
+          sendConfigToCompanion(prefs.haUrl, prefs.haToken);
+        });
+      }
     });
   }, []);
 
