@@ -31,6 +31,7 @@ export default function Command(props: LaunchProps<{ launchContext?: { entityId?
       setQueueLoading(true);
       fetchQueue(selectedSpeaker)
         .then((res: any) => {
+          console.log("QUEUE RESPONSE:", JSON.stringify(res));
           let items: any[] = [];
           if (Array.isArray(res)) {
             items = res;

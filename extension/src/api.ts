@@ -56,13 +56,13 @@ export async function callService(domain: string, service: string, serviceData: 
   });
 }
 
-export async function fetchFavourites(entityId: string) {
+export async function fetchFavourites(entityId: string, contentType: string = "favorites", contentId: string = "") {
   const connection = await getHAConnection();
   return connection.sendMessagePromise({
     type: "media_player/browse_media",
     entity_id: entityId,
-    media_content_type: "favorites",
-    media_content_id: ""
+    media_content_type: contentType,
+    media_content_id: contentId
   });
 }
 

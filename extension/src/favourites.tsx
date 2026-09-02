@@ -22,14 +22,32 @@ export default function Command(props: LaunchProps<{ launchContext?: { entityId?
   useEffect(() => {
     if (selectedSpeaker) {
       setFavsLoading(true);
-      fetchFavourites(selectedSpeaker).then((res: any) => {
-        let items: any[] = [];
-        if (res?.children) items = res.children;
-        else if (res?.response?.children) items = res.response.children;
-        else if (res?.result?.children) items = res.result.children; // Sometimes it's wrapped in result
+      fetchFavourites(selectedSpeaker).then(async (res: any) => {
+        let rootItems: any[] = [];
+        if (res?.children) rootItems = res.children;
+        else if (res?.response?.children) rootItems = res.response.children;
+        else if (res?.result?.children) rootItems = res.result.children; 
         
-        // As a fallback, if browse_media fails, we could use source_list, but let's just stick to the API response
-        setFavourites(Array.isArray(items) ? items : []);
+        const folders = rootItems.filter(i => i.can_expand);
+        const nonFolders = rootItems.filter(i => !i.can_expand);
+        let allItems = [...nonFolders];
+        
+        if (folders.length > 0) {
+          try {
+            const nestedPromises = folders.map(f => fetchFavourites(selectedSpeaker, f.media_content_type, f.media_content_id));
+            const results = await Promise.all(nestedPromises);
+            
+            results.forEach((r: any) => {
+              if (r?.children) allItems.push(...r.children);
+              else if (r?.response?.children) allItems.push(...r.response.children);
+              else if (r?.result?.children) allItems.push(...r.result.children);
+            });
+          } catch(e) {
+            console.error("Failed to fetch nested folders", e);
+          }
+        }
+        
+        setFavourites(allItems);
         setFavsLoading(false);
       }).catch((err) => {
         console.error("Failed to fetch favourites", err);
