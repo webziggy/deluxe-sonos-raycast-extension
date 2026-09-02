@@ -75,9 +75,9 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.5),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             )
           ],
           border: Border.all(
