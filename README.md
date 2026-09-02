@@ -17,20 +17,31 @@ A native, blazing-fast Raycast extension to seamlessly control your Sonos ecosys
 - **🔍 Instant Web Search**: Click any currently playing track or history item to instantly look it up in your default browser.
 - **🚀 Zero Polling & Resilient**: Uses a highly optimized WebSocket connection to Home Assistant for instant push-updates, complete with a lightweight background heartbeat to instantly recover the connection when macOS wakes from sleep.
 
-## Setup Instructions
+## Installation (Local Sideloading)
 
-1. **Install Dependencies**:
-   Open a terminal in the `extension` directory and run:
-   \`\`\`bash
+Since this extension is currently in private beta and not yet published to the public Raycast Store, you will need to install it locally from source. You only need to do this once!
+
+1. **Clone the Repository**:
+   Download the source code to your Mac.
+   ```bash
+   git clone https://github.com/webziggy/deluxe-sonos-raycast-extension.git
+   cd deluxe-sonos-raycast-extension/extension
+   ```
+
+2. **Install Dependencies**:
+   Ensure you have [Node.js](https://nodejs.org/) installed, then run:
+   ```bash
    npm install
-   \`\`\`
+   ```
 
-2. **Start Development**:
-   \`\`\`bash
+3. **Build & Register with Raycast**:
+   Run the development command once to compile the code and register the extension with your local Raycast app:
+   ```bash
    npm run dev
-   \`\`\`
+   ```
+   *Note: Once the command finishes and the extension appears in Raycast, you can safely kill the terminal process (`Ctrl + C`). The extension is now permanently compiled into Raycast!*
 
-3. **Configure Preferences**:
+4. **Configure Preferences**:
    When you run the extension for the first time in Raycast, it will prompt you for two things:
    - **Home Assistant URL**: The local or external URL to your HA instance (e.g., `http://homeassistant.local:8123` or your Nabu Casa URL).
    - **Long-Lived Access Token**: Generate this in Home Assistant by clicking your Profile in the bottom left -> Security -> Long-Lived Access Tokens.
