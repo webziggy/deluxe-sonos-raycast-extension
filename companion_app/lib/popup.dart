@@ -53,6 +53,7 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
 
     _slideAnimation = Tween<Offset>(
       begin: beginOffset,
+      end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
   }
 
