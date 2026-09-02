@@ -167,13 +167,13 @@ export default function Command() {
           {Array.from({ length: 10 }, (_, i) => tens + i).map(vol => (
             <MenuBarExtra.Item 
               key={vol} 
-              title={`${vol}%`} 
+              title={`Set Volume to ${vol}%`} 
               onAction={() => handleSetExactVolume(members, vol / 100)} 
             />
           ))}
         </MenuBarExtra.Submenu>
       ))}
-      <MenuBarExtra.Item title="100%" onAction={() => handleSetExactVolume(members, 1)} />
+      <MenuBarExtra.Item title="Set Volume to 100%" onAction={() => handleSetExactVolume(members, 1)} />
     </MenuBarExtra.Submenu>
   );
 
