@@ -111,6 +111,16 @@ void main() async {
   ]);
   await systemTray.setContextMenu(menu);
 
+  // Handle system tray click events natively
+  systemTray.registerSystemTrayEventHandler((eventName) {
+    debugPrint("eventName: $eventName");
+    if (eventName == kSystemTrayEventClick) {
+      systemTray.popUpContextMenu();
+    } else if (eventName == kSystemTrayEventRightClick) {
+      systemTray.popUpContextMenu();
+    }
+  });
+
   runApp(const MyApp());
 }
 
