@@ -215,7 +215,7 @@ export default function Command() {
         {nowPlayingLines.map((line, index) => (
           <MenuBarExtra.Item 
             key={`nowPlaying-${index}`}
-            title={line} 
+            title={`\u2800${line}`} 
             icon={isRoot ? (index === 0 ? stateIcon : transparentIcon) : undefined} 
             onAction={fullNowPlaying !== "Idle" && fullNowPlaying !== "Offline" ? () => open(`https://www.google.com/search?q=${encodeURIComponent(fullNowPlaying)}`) : undefined}
           />
@@ -270,7 +270,7 @@ export default function Command() {
                     {displayLines.map((line, lineIdx) => (
                       <MenuBarExtra.Item 
                         key={`${i}-${lineIdx}`}
-                        title={line} 
+                        title={`\u2800${line}`} 
                         subtitle={lineIdx === 0 ? new Date(item.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : undefined} 
                         onAction={() => open(`https://www.google.com/search?q=${encodeURIComponent(item.track)}`)}
                       />
