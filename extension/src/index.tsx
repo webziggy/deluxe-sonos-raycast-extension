@@ -517,6 +517,10 @@ export default function Command() {
       )}
       
       <MenuBarExtra.Section>
+        <MenuBarExtra.Item 
+          title={`Companion App: ${companionActive ? "Connected" : "Disconnected"}`} 
+          icon={companionActive ? Icon.CheckCircle : Icon.XMarkCircle} 
+        />
         <MenuBarExtra.Item title="Preferences..." onAction={openCommandPreferences} shortcut={{ modifiers: ["cmd"], key: "," }} />
       </MenuBarExtra.Section>
     </MenuBarExtra>

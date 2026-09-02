@@ -43,7 +43,6 @@ void main() async {
     await windowManager.setAlignment(Alignment.topRight);
     await windowManager.hide();
     // Restore opacity now that the window is safely hidden from the window server
-    await windowManager.setOpacity(1.0);
   });
 
   // Init HA WebSocket

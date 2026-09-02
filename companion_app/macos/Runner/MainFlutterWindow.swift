@@ -5,10 +5,11 @@ class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     let windowFrame = self.frame
-    // Make the window completely transparent on launch to prevent the flash!
-    self.alphaValue = 0.0
     self.contentViewController = flutterViewController
-    self.setFrame(windowFrame, display: true)
+    // Hide the window natively immediately before display to prevent the flash
+    self.isReleasedWhenClosed = false
+    self.orderOut(nil)
+    self.setFrame(windowFrame, display: false)
     
     // Force transparency for borderless popup
     self.isOpaque = false

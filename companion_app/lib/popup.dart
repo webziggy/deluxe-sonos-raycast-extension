@@ -63,7 +63,6 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
     });
 
     // Make window visible and slide in
-    await windowManager.setOpacity(1.0);
     await windowManager.show();
     _animController.forward();
 
