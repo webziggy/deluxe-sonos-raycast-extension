@@ -9,7 +9,7 @@ export default function Command(props: LaunchProps<{ launchContext?: { entityId?
   const { players: sonosPlayers, isLoading, error } = useSonosPlayers();
   
   const [selectedSpeaker, setSelectedSpeaker] = useState<string>(props.launchContext?.entityId || "");
-  const [favourites, setFavourites] = useState<any[]>([]);
+  const [favourites, setFavourites] = useState<{title: string, items: any[]}[]>([]);
   const [favsLoading, setFavsLoading] = useState(false);
 
   useEffect(() => {
@@ -30,24 +30,34 @@ export default function Command(props: LaunchProps<{ launchContext?: { entityId?
         
         const folders = rootItems.filter(i => i.can_expand);
         const nonFolders = rootItems.filter(i => !i.can_expand);
-        let allItems = [...nonFolders];
+        const newSections = [];
+        
+        if (nonFolders.length > 0) {
+          newSections.push({ title: "Favourites", items: nonFolders });
+        }
         
         if (folders.length > 0) {
           try {
             const nestedPromises = folders.map(f => fetchFavourites(selectedSpeaker, f.media_content_type, f.media_content_id));
             const results = await Promise.all(nestedPromises);
             
-            results.forEach((r: any) => {
-              if (r?.children) allItems.push(...r.children);
-              else if (r?.response?.children) allItems.push(...r.response.children);
-              else if (r?.result?.children) allItems.push(...r.result.children);
+            results.forEach((r: any, index: number) => {
+              const folderTitle = folders[index].title;
+              let children = [];
+              if (r?.children) children = r.children;
+              else if (r?.response?.children) children = r.response.children;
+              else if (r?.result?.children) children = r.result.children;
+              
+              if (children.length > 0) {
+                newSections.push({ title: folderTitle, items: children });
+              }
             });
           } catch(e) {
             console.error("Failed to fetch nested folders", e);
           }
         }
         
-        setFavourites(allItems);
+        setFavourites(newSections);
         setFavsLoading(false);
       }).catch((err) => {
         console.error("Failed to fetch favourites", err);
@@ -94,25 +104,29 @@ export default function Command(props: LaunchProps<{ launchContext?: { entityId?
         <Grid.EmptyView title="No Favourites Found" description="Add Sonos favourites in the Sonos app or Home Assistant." icon={Icon.StarDisabled} />
       )}
       
-      {favourites.map((fav: any, index: number) => {
-        const isPlaying = fav.title === currentSource;
-        const imageUrl = getFullImageUrl(fav.thumbnail);
-        
-        return (
-          <Grid.Item
-            key={`${fav.media_content_id}-${index}`}
-            title={fav.title}
-            subtitle={isPlaying ? "Playing..." : undefined}
-            content={imageUrl ? { source: imageUrl } : Icon.Star}
-            actions={
-              <ActionPanel>
-                <Action title="Play Favourite" icon={Icon.Play} onAction={() => handlePlayFavourite(fav.title)} />
-                <Action title="Open Preferences" icon={Icon.Gear} onAction={openCommandPreferences} shortcut={{ modifiers: ["cmd"], key: "," }} />
-              </ActionPanel>
-            }
-          />
-        );
-      })}
+      {favourites.map((section) => (
+        <Grid.Section key={section.title} title={section.title}>
+          {section.items.map((fav: any, index: number) => {
+            const isPlaying = fav.title === currentSource;
+            const imageUrl = getFullImageUrl(fav.thumbnail);
+            
+            return (
+              <Grid.Item
+                key={`${fav.media_content_id}-${index}`}
+                title={fav.title}
+                subtitle={isPlaying ? "Playing..." : undefined}
+                content={imageUrl ? { source: imageUrl } : Icon.Star}
+                actions={
+                  <ActionPanel>
+                    <Action title="Play Favourite" icon={Icon.Play} onAction={() => handlePlayFavourite(fav.title)} />
+                    <Action title="Open Preferences" icon={Icon.Gear} onAction={openCommandPreferences} shortcut={{ modifiers: ["cmd"], key: "," }} />
+                  </ActionPanel>
+                }
+              />
+            );
+          })}
+        </Grid.Section>
+      ))}
     </Grid>
   );
 }
