@@ -131,20 +131,20 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
     double titleSize = 12;
     double trackSize = 16;
     double cardRadius = 12;
-    double textPadding = 16;
+    double textPadding = 24;
     
     if (widget.cardSize == 'Medium') {
       imageSize = 128;
       titleSize = 14;
       trackSize = 20;
       cardRadius = 16;
-      textPadding = 20;
+      textPadding = 32;
     } else if (widget.cardSize == 'Large') {
       imageSize = 178;
       titleSize = 18;
       trackSize = 26;
       cardRadius = 24;
-      textPadding = 28;
+      textPadding = 40;
     } else if (widget.cardSize == 'Large') {
       imageSize = 178;
       titleSize = 18;
@@ -225,16 +225,6 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Now Playing on $speaker',
-                        style: _getFontStyle(TextStyle(
-                          color: Colors.white.withOpacity(0.6),
-                          fontSize: titleSize,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        )),
-                      ),
-                      const SizedBox(height: 4),
                       Flexible(
                         child: AutoSizeText(
                           track,

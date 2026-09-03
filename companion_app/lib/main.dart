@@ -191,8 +191,12 @@ void main() async {
   Future<void> rebuildMenu() async {
     final config = await AppConfig.loadConfig();
     final isPaused = config?['notificationsEnabled'] == false;
+    final allowlist = (config?['allowlist'] as List?)?.cast<String>() ?? [];
+    final activeSpeaker = allowlist.isNotEmpty ? allowlist.first.split('.').last : 'All Speakers';
     
     List<MenuItemBase> menuItems = [
+      MenuItemLabel(label: 'Active Speaker: $activeSpeaker', enabled: false),
+      MenuSeparator(),
       MenuItemLabel(label: isPaused ? '⏸ Notifications Paused' : '✅ Notifications Active', enabled: false),
       MenuSeparator(),
       MenuItemLabel(
