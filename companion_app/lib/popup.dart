@@ -212,16 +212,18 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
                         ),
                       ),
                       const SizedBox(height: 4),
-                      AutoSizeText(
-                        track,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: trackSize,
-                          fontWeight: FontWeight.bold,
+                      Flexible(
+                        child: AutoSizeText(
+                          track,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: trackSize,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 4,
+                          minFontSize: 12,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 4,
-                        minFontSize: 12,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
