@@ -31,7 +31,7 @@
     },
     {
       "name": "filters",
-      "title": "Notification Filters",
+      "title": "Sonos Notification Filters",
       "description": "Configure regex allowlists and blocklists for track notifications",
       "mode": "view"
     }
