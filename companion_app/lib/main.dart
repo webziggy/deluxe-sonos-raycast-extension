@@ -201,7 +201,12 @@ void main() async {
       for (var track in globalServer.trackHistory) {
         final title = track['track'] ?? 'Unknown';
         final speaker = track['speaker'] ?? 'Unknown';
-        menuItems.add(MenuItemLabel(label: '• $title ($speaker)', enabled: false));
+        menuItems.add(MenuItemLabel(
+          label: '• $title ($speaker)', 
+          onClicked: (_) {
+            globalServer.triggerNotifyLocally(track);
+          }
+        ));
       }
       menuItems.add(MenuSeparator());
     }
