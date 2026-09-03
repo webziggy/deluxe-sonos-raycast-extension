@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:http/http.dart' as http;
+import 'station_config.dart';
 
 class HAWebSocket {
   final Function(Map<String, dynamic>, bool isInitialSync) onTrackChange;
@@ -15,6 +16,7 @@ class HAWebSocket {
 
   final Map<String, String> _lastTracks = {};
   List<dynamic> rawStatesCache = [];
+  Map<String, Map<String, String>> observedStations = {};
 
   HAWebSocket({required this.onTrackChange});
 
@@ -172,40 +174,68 @@ class HAWebSocket {
         // Sometimes integrations even swap artist and title (e.g. Title="Artist", Artist="Song").
         bool isLikelyRadioStream = false;
         String itunesQuery = '';
+        String? channelName;
         
         if (attrs['media_channel'] != null) {
+          channelName = attrs['media_channel'];
           isLikelyRadioStream = true;
-          // Combine whatever HA parsed into the query
           itunesQuery = "${mediaTitle ?? ''} ${mediaArtist ?? ''}".trim();
         } else if (mediaTitle != null && mediaTitle.contains(' - ')) {
+          channelName = 'Unknown ICY Stream';
           isLikelyRadioStream = true;
           itunesQuery = mediaTitle;
         } else if ((mediaArtist == null || mediaArtist.trim().isEmpty) && mediaTitle != null) {
+          channelName = 'Unknown ICY Stream';
           isLikelyRadioStream = true;
           itunesQuery = mediaTitle;
         }
 
-        if (isLikelyRadioStream && itunesQuery.isNotEmpty) {
-           try {
-             // Apple Music handles "Artist - Track" better if we just replace hyphens with a space
-             final cleanQuery = itunesQuery.replaceAll(' - ', ' ').replaceAll(RegExp(r'\s+'), ' ');
-             final query = Uri.encodeQueryComponent(cleanQuery);
-             final url = Uri.parse('https://itunes.apple.com/search?term=$query&entity=song&limit=1');
-             final response = await http.get(url).timeout(const Duration(milliseconds: 1500));
-             
-             if (response.statusCode == 200) {
-               final json = jsonDecode(response.body);
-               if (json['results'] != null && json['results'].length > 0) {
-                 final artworkUrl100 = json['results'][0]['artworkUrl100'] as String?;
-                 if (artworkUrl100 != null) {
-                   badgeUrl = artUrl; // Set the original radio station logo as the badge
-                   artUrl = artworkUrl100.replaceAll('100x100bb.jpg', '600x600bb.jpg'); // Upgrade to high-res
-                 }
-               }
-             }
-           } catch (e) {
-             print('iTunes API fetch failed: $e');
-           }
+        if (isLikelyRadioStream) {
+          // Record observation for Raycast Station Manager
+          if (channelName != null) {
+            observedStations[channelName] = {
+              'title': mediaTitle ?? '',
+              'artist': mediaArtist ?? ''
+            };
+          }
+
+          if (itunesQuery.isNotEmpty) {
+            // Check station config
+            final stationConfig = await StationConfig.loadConfig();
+            final configForChannel = stationConfig[channelName] ?? {};
+            
+            final skipItunes = configForChannel['skipItunes'] == true;
+            final customBadge = configForChannel['badgeUrl'] as String?;
+
+            if (!skipItunes) {
+              try {
+                final cleanQuery = itunesQuery.replaceAll(' - ', ' ').replaceAll(RegExp(r'\s+'), ' ');
+                final query = Uri.encodeQueryComponent(cleanQuery);
+                final url = Uri.parse('https://itunes.apple.com/search?term=$query&entity=song&limit=1');
+                final response = await http.get(url).timeout(const Duration(milliseconds: 1500));
+                
+                if (response.statusCode == 200) {
+                  final json = jsonDecode(response.body);
+                  if (json['results'] != null && json['results'].length > 0) {
+                    final artworkUrl100 = json['results'][0]['artworkUrl100'] as String?;
+                    if (artworkUrl100 != null) {
+                      badgeUrl = customBadge ?? artUrl; // Set to custom badge or fallback to HA generic art
+                      artUrl = artworkUrl100.replaceAll('100x100bb.jpg', '600x600bb.jpg'); 
+                    }
+                  }
+                }
+              } catch (e) {
+                print('iTunes API fetch failed: $e');
+              }
+            } else {
+              // We skipped iTunes, but they might still want a custom badge?
+              // Usually if they skip iTunes, it's because artUrl is already high-res song art.
+              // So if they provided a custom badge, let's use it!
+              if (customBadge != null) {
+                badgeUrl = customBadge;
+              }
+            }
+          }
         }
         
         onTrackChange({

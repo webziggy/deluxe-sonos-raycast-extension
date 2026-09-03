@@ -46,6 +46,12 @@
       "title": "Sonos Debug States",
       "description": "View raw Home Assistant states for Sonos speakers",
       "mode": "view"
+    },
+    {
+      "name": "manage-stations",
+      "title": "Sonos Manage Radio Stations",
+      "description": "Configure custom badges and iTunes fetcher overrides for live radio streams",
+      "mode": "view"
     }
   ],
   "preferences": [

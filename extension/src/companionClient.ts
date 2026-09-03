@@ -141,3 +141,46 @@ export async function getCompanionDebugStates(): Promise<any[]> {
   } catch (e) {}
   return [];
 }
+
+export async function getObservedStations(): Promise<Record<string, {title: string, artist: string}>> {
+  const auth = getAuthDetails();
+  if (!auth) return {};
+  try {
+    const res = await fetch(`http://127.0.0.1:${auth.port}/observed_stations`);
+    if (res.ok) {
+      return (await res.json()) as Record<string, {title: string, artist: string}>;
+    }
+  } catch (e) {}
+  return {};
+}
+
+export async function getStationConfig(): Promise<Record<string, any>> {
+  const auth = getAuthDetails();
+  if (!auth) return {};
+  try {
+    const res = await fetch(`http://127.0.0.1:${auth.port}/station_config`, {
+      headers: { "Authorization": `Bearer ${auth.token}` }
+    });
+    if (res.ok) {
+      return (await res.json()) as Record<string, any>;
+    }
+  } catch (e) {}
+  return {};
+}
+
+export async function saveStationConfig(config: Record<string, any>): Promise<void> {
+  const auth = getAuthDetails();
+  if (!auth) return;
+  try {
+    await fetch(`http://127.0.0.1:${auth.port}/station_config`, {
+      method: "POST",
+      headers: { 
+        "Authorization": `Bearer ${auth.token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(config)
+    });
+  } catch (e) {
+    console.error("Failed to save station config", e);
+  }
+}

@@ -8,6 +8,7 @@ import 'package:shelf_router/shelf_router.dart';
 import 'package:uuid/uuid.dart';
 import 'sonos_upnp.dart';
 import 'config.dart';
+import 'station_config.dart';
 
 class LocalServer {
   late HttpServer _server;
@@ -15,6 +16,7 @@ class LocalServer {
   final Function(String haUrl, String haToken) onConfigUpdate;
   final List<Map<String, dynamic>> trackHistory = [];
   List<dynamic> Function()? getDebugStates;
+  Map<String, Map<String, String>> Function()? getObservedStations;
 
   final _notifyController = StreamController<Map<String, dynamic>>.broadcast();
   Stream<Map<String, dynamic>> get onNotify => _notifyController.stream;
@@ -43,6 +45,30 @@ class LocalServer {
     final router = Router();
 
     // Health check endpoint
+    router.get('/health', (Request request) {
+      return Response.ok(jsonEncode({'status': 'ok'}), headers: {'Content-Type': 'application/json'});
+    });
+
+    router.post('/config', (Request request) async {
+      final auth = request.headers['authorization'];
+      if (auth != 'Bearer $_secretToken') {
+        return Response.forbidden('Invalid or missing token');
+      }
+
+      try {
+        final payload = await request.readAsString();
+        final data = jsonDecode(payload);
+        final haUrl = data['haUrl'] as String;
+        final haToken = data['haToken'] as String;
+        
+        onConfigUpdate(haUrl, haToken);
+
+        return Response.ok(jsonEncode({'success': true}));
+      } catch (e) {
+        return Response.badRequest(body: 'Invalid JSON payload');
+      }
+    });
+
     router.get('/history', (Request request) {
       return Response.ok(jsonEncode(trackHistory), headers: {'Content-Type': 'application/json'});
     });
@@ -50,6 +76,35 @@ class LocalServer {
     router.get('/debug_states', (Request request) {
       final states = getDebugStates?.call() ?? [];
       return Response.ok(jsonEncode(states), headers: {'Content-Type': 'application/json'});
+    });
+
+    router.get('/observed_stations', (Request request) {
+      final stations = getObservedStations?.call() ?? {};
+      return Response.ok(jsonEncode(stations), headers: {'Content-Type': 'application/json'});
+    });
+
+    router.get('/station_config', (Request request) async {
+      final auth = request.headers['authorization'];
+      if (auth != 'Bearer $_secretToken') {
+        return Response.forbidden('Invalid or missing token');
+      }
+      final config = await StationConfig.loadConfig();
+      return Response.ok(jsonEncode(config), headers: {'Content-Type': 'application/json'});
+    });
+
+    router.post('/station_config', (Request request) async {
+      final auth = request.headers['authorization'];
+      if (auth != 'Bearer $_secretToken') {
+        return Response.forbidden('Invalid or missing token');
+      }
+      try {
+        final payload = await request.readAsString();
+        final data = jsonDecode(payload);
+        await StationConfig.saveConfig(Map<String, dynamic>.from(data));
+        return Response.ok(jsonEncode({'success': true}));
+      } catch (e) {
+        return Response.internalServerError(body: e.toString());
+      }
     });
 
     // Notify endpoint
