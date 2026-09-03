@@ -48,7 +48,7 @@ void main() async {
   Future<void> Function()? rebuildMenuCallback;
 
   // Init HA WebSocket
-  haWebSocket = HAWebSocket(onTrackChange: (trackData) async {
+  haWebSocket = HAWebSocket(onTrackChange: (trackData, isInitialSync) async {
     final trackName = trackData['track'] ?? 'Unknown Track';
     final speakerName = trackData['speaker'] ?? 'Unknown Speaker';
     final fullString = '$trackName on $speakerName';
@@ -63,6 +63,8 @@ void main() async {
     if (rebuildMenuCallback != null) {
       await rebuildMenuCallback!();
     }
+    
+    if (isInitialSync) return;
 
     final config = await AppConfig.loadConfig();
     

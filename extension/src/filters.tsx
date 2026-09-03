@@ -43,7 +43,7 @@ export default function FiltersCommand() {
         </ActionPanel>
       }
     >
-      <Form.Description title="Regex Rules" text="Enter one regular expression per line.\nIf the Allowlist is used, EVERYTHING else is blocked." />
+      <Form.Description title="Regex Rules" text="Enter one regular expression per line. If the Allowlist is used, EVERYTHING else is blocked." />
       <Form.TextArea id="allowlist" title="Allowlist" value={allowlist} onChange={setAllowlist} placeholder=".*(My Favorite Song).*$" />
       <Form.TextArea id="blocklist" title="Blocklist" value={blocklist} onChange={setBlocklist} placeholder=".*on Kitchen Speaker.*$" />
       

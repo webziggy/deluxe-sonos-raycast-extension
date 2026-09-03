@@ -3,12 +3,13 @@ import 'dart:convert';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class HAWebSocket {
-  final Function(Map<String, dynamic>) onTrackChange;
+  final Function(Map<String, dynamic>, bool isInitialSync) onTrackChange;
   WebSocketChannel? _channel;
   String? _url;
   String? _token;
   bool _isConnected = false;
   int _msgId = 1;
+  int? _getStatesMsgId;
 
   final Map<String, String> _lastTracks = {};
 
@@ -61,7 +62,20 @@ class HAWebSocket {
     } else if (type == 'auth_invalid') {
       print('HA WebSocket Auth Failed');
     } else if (type == 'event') {
-      _handleEvent(data['event']);
+      _handleEvent(data['event'], false);
+    } else if (type == 'result' && data['id'] == _getStatesMsgId && data['success'] == true) {
+      final states = data['result'] as List<dynamic>;
+      for (var stateObj in states) {
+        if (stateObj['entity_id'].toString().startsWith('media_player.')) {
+          _handleEvent({
+            'event_type': 'state_changed',
+            'data': {
+              'entity_id': stateObj['entity_id'],
+              'new_state': stateObj
+            }
+          }, true);
+        }
+      }
     }
   }
 
@@ -71,9 +85,15 @@ class HAWebSocket {
       'type': 'subscribe_events',
       'event_type': 'state_changed'
     }));
+
+    _getStatesMsgId = _msgId++;
+    _channel?.sink.add(jsonEncode({
+      'id': _getStatesMsgId,
+      'type': 'get_states',
+    }));
   }
 
-  void _handleEvent(Map<String, dynamic> event) {
+  void _handleEvent(Map<String, dynamic> event, bool isInitialSync) {
     if (event['event_type'] != 'state_changed') return;
     final data = event['data'];
     if (data == null) return;
@@ -127,7 +147,7 @@ class HAWebSocket {
           'speaker': friendlyName,
           'artUrl': artUrl,
           'haToken': _token,
-        });
+        }, isInitialSync);
       }
     }
   }
