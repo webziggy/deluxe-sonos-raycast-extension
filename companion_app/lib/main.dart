@@ -59,10 +59,9 @@ void main() async {
       globalServer.trackHistory.removeLast();
     }
     
-    // Trigger tray rebuild to show new history
-    if (rebuildMenuCallback != null) {
-      await rebuildMenuCallback!();
-    }
+    // Trigger tray rebuild to show new history (debounced to prevent native crash on boot storm)
+    globalServer.cancelRebuildTimer();
+    globalServer.startRebuildTimer(rebuildMenuCallback);
     
     if (isInitialSync) return;
 

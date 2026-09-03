@@ -18,6 +18,18 @@ class LocalServer {
   final _notifyController = StreamController<Map<String, dynamic>>.broadcast();
   Stream<Map<String, dynamic>> get onNotify => _notifyController.stream;
 
+  Timer? _rebuildTimer;
+
+  void cancelRebuildTimer() {
+    _rebuildTimer?.cancel();
+  }
+
+  void startRebuildTimer(Future<void> Function()? callback) {
+    _rebuildTimer = Timer(const Duration(milliseconds: 500), () {
+      if (callback != null) callback();
+    });
+  }
+
   void triggerNotifyLocally(Map<String, dynamic> data) {
     _notifyController.add(data);
   }

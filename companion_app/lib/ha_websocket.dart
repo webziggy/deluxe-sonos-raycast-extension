@@ -11,6 +11,7 @@ class HAWebSocket {
   bool _isConnected = false;
   int _msgId = 1;
   int? _getStatesMsgId;
+  Timer? _pingTimer;
 
   final Map<String, String> _lastTracks = {};
 
@@ -59,6 +60,14 @@ class HAWebSocket {
     } else if (type == 'auth_ok') {
       _isConnected = true;
       print('HA WebSocket Authenticated!');
+      
+      _pingTimer?.cancel();
+      _pingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        if (_isConnected && _channel != null) {
+          _channel!.sink.add(jsonEncode({'id': _msgId++, 'type': 'ping'}));
+        }
+      });
+      
       _subscribeToEvents();
     } else if (type == 'auth_invalid') {
       print('HA WebSocket Auth Failed');
@@ -181,12 +190,14 @@ class HAWebSocket {
 
   void _handleDisconnect() {
     print('HA WebSocket Disconnected. Reconnecting in 5s...');
+    _pingTimer?.cancel();
     _isConnected = false;
     _channel = null;
     Future.delayed(const Duration(seconds: 5), _connectInternal);
   }
 
   void dispose() {
+    _pingTimer?.cancel();
     _channel?.sink.close();
   }
 }
