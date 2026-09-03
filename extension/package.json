@@ -34,6 +34,12 @@
       "title": "Sonos Notification Filters",
       "description": "Configure regex allowlists and blocklists for track notifications",
       "mode": "view"
+    },
+    {
+      "name": "debug",
+      "title": "Debug Notifications",
+      "description": "View and manually re-raise recent track notifications",
+      "mode": "view"
     }
   ],
   "preferences": [
