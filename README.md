@@ -61,6 +61,17 @@ When the Sonos Menu Bar is open, you can use the following quick hotkeys:
 - **Open Queue**: `Cmd + O`
 - **Group All (Party Mode)**: `Cmd + G`
 
+## The Companion App (Desktop Notifications & History)
+
+The repository also includes a standalone Flutter desktop app (`companion_app/`) that runs silently in the macOS background to provide:
+- **🔔 Real-time Track Notifications**: Native, beautiful desktop popups when a new song starts playing.
+- **🖼️ iTunes API Fallback**: Automatically upgrades low-res radio station art to high-res Apple Music album art, while rendering the station logo as a gorgeous badge.
+- **🛡️ Regex Blocklists**: Filter out annoying notification spam (like "Sponsored by..." or "News at 10") by configuring Regex allowlists/blocklists via the `Sonos Notification Filters` Raycast command.
+- **🕒 System Tray History**: Click the small Sonos icon in your macOS system tray to view your recently played tracks, or click a track to re-raise the notification.
+- **🛠️ Debugging**: Use the `Sonos Debug States` and `Sonos Debug Notifications` Raycast commands to inspect Home Assistant metadata or manually re-raise historic payloads.
+
+*Note: The companion app boots automatically when you use the Raycast extension and stays alive in the background.*
+
 ## Architecture & Documentation
 
 For developers looking to understand the inner workings of the Companion App, including how we gracefully handle wild inconsistencies in Home Assistant's UPnP/ICY metadata parsing across different radio stations, check out the documentation below:
