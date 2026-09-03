@@ -61,5 +61,11 @@ When the Sonos Menu Bar is open, you can use the following quick hotkeys:
 - **Open Queue**: `Cmd + O`
 - **Group All (Party Mode)**: `Cmd + G`
 
+## Architecture & Documentation
+
+For developers looking to understand the inner workings of the Companion App, including how we gracefully handle wild inconsistencies in Home Assistant's UPnP/ICY metadata parsing across different radio stations, check out the documentation below:
+
+- [Home Assistant Metadata Quirks & The iTunes API Fetcher](./docs/metadata-quirks.md)
+
 ---
 Built with ❤️ using the official Raycast API and the \`home-assistant-js-websocket\` library.
