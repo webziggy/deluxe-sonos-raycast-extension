@@ -97,6 +97,7 @@ void main() async {
     haWebSocket.connect(haUrl, haToken);
   });
   globalServer.getDebugStates = () => haWebSocket.rawStatesCache;
+  globalServer.getObservedStations = () => haWebSocket.observedStations;
   await globalServer.start();
 
   // Load existing config on boot
@@ -211,17 +212,20 @@ void main() async {
       menuItems.add(MenuSeparator());
     }
 
+    final currentSize = config?['cardSize'] as String? ?? 'Small';
+    final currentPos = config?['alignment'] as String? ?? 'Top Right';
+
     menuItems.addAll([
-      MenuItemLabel(label: 'Size: Small', onClicked: (_) => updateCardSize('Small')),
-      MenuItemLabel(label: 'Size: Medium', onClicked: (_) => updateCardSize('Medium')),
-      MenuItemLabel(label: 'Size: Large', onClicked: (_) => updateCardSize('Large')),
+      MenuItemCheckbox(label: 'Size: Small', checked: currentSize == 'Small', onClicked: (_) async { await updateCardSize('Small'); await rebuildMenu(); }),
+      MenuItemCheckbox(label: 'Size: Medium', checked: currentSize == 'Medium', onClicked: (_) async { await updateCardSize('Medium'); await rebuildMenu(); }),
+      MenuItemCheckbox(label: 'Size: Large', checked: currentSize == 'Large', onClicked: (_) async { await updateCardSize('Large'); await rebuildMenu(); }),
       MenuSeparator(),
-      MenuItemLabel(label: 'Position: Top Right', onClicked: (_) => updateAlignment('Top Right')),
-      MenuItemLabel(label: 'Position: Top Left', onClicked: (_) => updateAlignment('Top Left')),
-      MenuItemLabel(label: 'Position: Top Center', onClicked: (_) => updateAlignment('Top Center')),
-      MenuItemLabel(label: 'Position: Bottom Right', onClicked: (_) => updateAlignment('Bottom Right')),
-      MenuItemLabel(label: 'Position: Bottom Left', onClicked: (_) => updateAlignment('Bottom Left')),
-      MenuItemLabel(label: 'Position: Bottom Center', onClicked: (_) => updateAlignment('Bottom Center')),
+      MenuItemCheckbox(label: 'Position: Top Right', checked: currentPos == 'Top Right', onClicked: (_) async { await updateAlignment('Top Right'); await rebuildMenu(); }),
+      MenuItemCheckbox(label: 'Position: Top Left', checked: currentPos == 'Top Left', onClicked: (_) async { await updateAlignment('Top Left'); await rebuildMenu(); }),
+      MenuItemCheckbox(label: 'Position: Top Center', checked: currentPos == 'Top Center', onClicked: (_) async { await updateAlignment('Top Center'); await rebuildMenu(); }),
+      MenuItemCheckbox(label: 'Position: Bottom Right', checked: currentPos == 'Bottom Right', onClicked: (_) async { await updateAlignment('Bottom Right'); await rebuildMenu(); }),
+      MenuItemCheckbox(label: 'Position: Bottom Left', checked: currentPos == 'Bottom Left', onClicked: (_) async { await updateAlignment('Bottom Left'); await rebuildMenu(); }),
+      MenuItemCheckbox(label: 'Position: Bottom Center', checked: currentPos == 'Bottom Center', onClicked: (_) async { await updateAlignment('Bottom Center'); await rebuildMenu(); }),
       MenuSeparator(),
       MenuItemLabel(label: 'Quit', onClicked: (menuItem) async {
         await globalServer.stop();
