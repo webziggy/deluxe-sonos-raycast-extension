@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:window_manager/window_manager.dart';
 
 class NotificationPopup extends StatefulWidget {
@@ -211,14 +212,15 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
+                      AutoSizeText(
                         track,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: trackSize,
                           fontWeight: FontWeight.bold,
                         ),
-                        maxLines: 2,
+                        maxLines: 4,
+                        minFontSize: 12,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
