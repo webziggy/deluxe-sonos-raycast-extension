@@ -7,11 +7,13 @@ import 'package:shelf/shelf_io.dart' as io;
 import 'package:shelf_router/shelf_router.dart';
 import 'package:uuid/uuid.dart';
 import 'sonos_upnp.dart';
+import 'config.dart';
 
 class LocalServer {
   late HttpServer _server;
   late String _secretToken;
   final Function(String haUrl, String haToken) onConfigUpdate;
+  final List<Map<String, dynamic>> trackHistory = [];
 
   final _notifyController = StreamController<Map<String, dynamic>>.broadcast();
   Stream<Map<String, dynamic>> get onNotify => _notifyController.stream;
@@ -88,6 +90,45 @@ class LocalServer {
       } catch (e) {
         return Response.badRequest(body: 'Invalid JSON payload');
       }
+    });
+
+    // Filters endpoint
+    router.get('/filters', (Request request) async {
+      final auth = request.headers['authorization'];
+      if (auth != 'Bearer $_secretToken') {
+        return Response.forbidden('Invalid or missing token');
+      }
+      final config = await AppConfig.loadConfig();
+      return Response.ok(jsonEncode({
+        'allowlist': config?['allowlist'] ?? [],
+        'blocklist': config?['blocklist'] ?? [],
+      }), headers: {'content-type': 'application/json'});
+    });
+
+    router.post('/filters', (Request request) async {
+      final auth = request.headers['authorization'];
+      if (auth != 'Bearer $_secretToken') {
+        return Response.forbidden('Invalid or missing token');
+      }
+      try {
+        final payload = await request.readAsString();
+        final data = jsonDecode(payload);
+        List<String> allowlist = List<String>.from(data['allowlist'] ?? []);
+        List<String> blocklist = List<String>.from(data['blocklist'] ?? []);
+        await AppConfig.saveFilters(allowlist, blocklist);
+        return Response.ok(jsonEncode({'success': true}));
+      } catch (e) {
+        return Response.badRequest(body: 'Invalid JSON payload');
+      }
+    });
+
+    // History endpoint
+    router.get('/history', (Request request) async {
+      final auth = request.headers['authorization'];
+      if (auth != 'Bearer $_secretToken') {
+        return Response.forbidden('Invalid or missing token');
+      }
+      return Response.ok(jsonEncode({'history': trackHistory}), headers: {'content-type': 'application/json'});
     });
 
     // We bind to port 0 to let the OS assign an available port automatically to avoid conflicts

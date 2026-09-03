@@ -45,10 +45,46 @@ void main() async {
     await windowManager.show();
   });
 
+  Future<void> Function()? rebuildMenuCallback;
+
   // Init HA WebSocket
   haWebSocket = HAWebSocket(onTrackChange: (trackData) async {
+    final trackName = trackData['track'] ?? 'Unknown Track';
+    final speakerName = trackData['speaker'] ?? 'Unknown Speaker';
+    final fullString = '$trackName on $speakerName';
+
+    // 1. Maintain History
+    globalServer.trackHistory.insert(0, trackData);
+    if (globalServer.trackHistory.length > 10) {
+      globalServer.trackHistory.removeLast();
+    }
+    
+    // Trigger tray rebuild to show new history
+    if (rebuildMenuCallback != null) {
+      await rebuildMenuCallback!();
+    }
+
     final config = await AppConfig.loadConfig();
-    if (config?['notificationsEnabled'] != false) {
+    
+    if (config?['notificationsEnabled'] == false) {
+      return;
+    }
+
+    // 2. Regex Filtering
+    List<String> allowlist = List<String>.from(config?['allowlist'] ?? []);
+    List<String> blocklist = List<String>.from(config?['blocklist'] ?? []);
+
+    bool allowed = true;
+    if (allowlist.isNotEmpty) {
+      allowed = allowlist.any((r) => RegExp(r, caseSensitive: false).hasMatch(fullString));
+    }
+    if (allowed && blocklist.isNotEmpty) {
+      if (blocklist.any((r) => RegExp(r, caseSensitive: false).hasMatch(fullString))) {
+        allowed = false;
+      }
+    }
+
+    if (allowed) {
       globalServer.triggerNotifyLocally(trackData);
     }
   });
@@ -145,7 +181,7 @@ void main() async {
     final config = await AppConfig.loadConfig();
     final isPaused = config?['notificationsEnabled'] == false;
     
-    await menu.buildFrom([
+    List<MenuItem> menuItems = [
       MenuItemLabel(label: isPaused ? '⏸ Notifications Paused' : '✅ Notifications Active', enabled: false),
       MenuSeparator(),
       MenuItemLabel(
@@ -156,6 +192,19 @@ void main() async {
         },
       ),
       MenuSeparator(),
+    ];
+
+    if (globalServer.trackHistory.isNotEmpty) {
+      menuItems.add(MenuItemLabel(label: 'Recent Tracks', enabled: false));
+      for (var track in globalServer.trackHistory) {
+        final title = track['track'] ?? 'Unknown';
+        final speaker = track['speaker'] ?? 'Unknown';
+        menuItems.add(MenuItemLabel(label: '• $title ($speaker)', enabled: false));
+      }
+      menuItems.add(MenuSeparator());
+    }
+
+    menuItems.addAll([
       MenuItemLabel(label: 'Size: Small', onClicked: (_) => updateCardSize('Small')),
       MenuItemLabel(label: 'Size: Medium', onClicked: (_) => updateCardSize('Medium')),
       MenuItemLabel(label: 'Size: Large', onClicked: (_) => updateCardSize('Large')),
@@ -173,9 +222,12 @@ void main() async {
         exit(0);
       }),
     ]);
+
+    await menu.buildFrom(menuItems);
     await systemTray.setContextMenu(menu);
   }
 
+  rebuildMenuCallback = rebuildMenu;
   await rebuildMenu();
 
   // Handle system tray click events natively
