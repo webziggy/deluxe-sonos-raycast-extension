@@ -127,3 +127,17 @@ export async function syncFiltersToCompanion(allowlist: string[], blocklist: str
     console.error("Failed to sync filters", e);
   }
 }
+
+export async function getCompanionDebugStates(): Promise<any[]> {
+  const auth = getAuthDetails();
+  if (!auth) return [];
+  try {
+    const res = await fetch(`http://127.0.0.1:${auth.port}/debug_states`, {
+      headers: { "Authorization": `Bearer ${auth.token}` }
+    });
+    if (res.ok) {
+      return (await res.json()) as any[];
+    }
+  } catch (e) {}
+  return [];
+}

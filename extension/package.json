@@ -40,6 +40,12 @@
       "title": "Debug Notifications",
       "description": "View and manually re-raise recent track notifications",
       "mode": "view"
+    },
+    {
+      "name": "debug-states",
+      "title": "Debug States",
+      "description": "View raw Home Assistant states for Sonos speakers",
+      "mode": "view"
     }
   ],
   "preferences": [
