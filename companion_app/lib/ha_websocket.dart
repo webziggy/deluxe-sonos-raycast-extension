@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:http/http.dart' as http;
 
 class HAWebSocket {
   final Function(Map<String, dynamic>, bool isInitialSync) onTrackChange;
@@ -93,7 +94,7 @@ class HAWebSocket {
     }));
   }
 
-  void _handleEvent(Map<String, dynamic> event, bool isInitialSync) {
+  void _handleEvent(Map<String, dynamic> event, bool isInitialSync) async {
     if (event['event_type'] != 'state_changed') return;
     final data = event['data'];
     if (data == null) return;
@@ -104,7 +105,6 @@ class HAWebSocket {
     final newState = data['new_state'];
     if (newState == null) return;
     
-    // We only care about Sonos, but for simplicity we'll process all media_players and rely on attributes
     final attrs = newState['attributes'];
     if (attrs == null) return;
 
@@ -112,7 +112,6 @@ class HAWebSocket {
     final mediaArtist = attrs['media_artist'];
     final state = newState['state'];
     
-    // Build full track string
     String trackString = "";
     if (state == "playing" || state == "paused") {
       if (mediaTitle != null && mediaArtist != null) {
@@ -130,7 +129,6 @@ class HAWebSocket {
     if (lastTrack != trackString) {
       _lastTracks[entityId] = trackString;
       
-      // Only fire popup if it's playing
       if (state == 'playing') {
         final friendlyName = attrs['friendly_name'] ?? entityId;
         String? artUrl;
@@ -141,11 +139,40 @@ class HAWebSocket {
               : '/${attrs['entity_picture']}';
           artUrl = '$basePath$picturePath';
         }
+
+        String? badgeUrl;
+        
+        // iTunes API Fetcher for Radio Streams
+        // A stream typically has a missing mediaArtist, but a mediaTitle with a hyphen
+        if ((mediaArtist == null || mediaArtist.trim().isEmpty) && 
+             mediaTitle != null && 
+             mediaTitle.contains(' - ')) {
+           
+           try {
+             final query = Uri.encodeQueryComponent(mediaTitle);
+             final url = Uri.parse('https://itunes.apple.com/search?term=$query&entity=song&limit=1');
+             final response = await http.get(url).timeout(const Duration(milliseconds: 1500));
+             
+             if (response.statusCode == 200) {
+               final json = jsonDecode(response.body);
+               if (json['results'] != null && json['results'].length > 0) {
+                 final artworkUrl100 = json['results'][0]['artworkUrl100'] as String?;
+                 if (artworkUrl100 != null) {
+                   badgeUrl = artUrl; // Set the original radio station logo as the badge
+                   artUrl = artworkUrl100.replaceAll('100x100bb.jpg', '600x600bb.jpg'); // Upgrade to high-res
+                 }
+               }
+             }
+           } catch (e) {
+             print('iTunes API fetch failed: $e');
+           }
+        }
         
         onTrackChange({
           'track': trackString,
           'speaker': friendlyName,
           'artUrl': artUrl,
+          'badgeUrl': badgeUrl,
           'haToken': _token,
         }, isInitialSync);
       }

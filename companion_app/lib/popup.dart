@@ -152,19 +152,48 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
           borderRadius: BorderRadius.circular(16),
           child: Row(
             children: [
-              if (artUrl != null)
-                Image.network(
-                  artUrl,
-                  headers: _currentData!['haToken'] != null 
-                      ? {'Authorization': 'Bearer ${_currentData!['haToken']}'} 
-                      : null,
-                  width: imageSize,
-                  height: imageSize,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => _buildFallbackArt(imageSize),
-                )
-              else
-                _buildFallbackArt(imageSize),
+              Stack(
+                children: [
+                  if (artUrl != null)
+                    Image.network(
+                      artUrl,
+                      headers: _currentData!['haToken'] != null && !artUrl.contains('mzstatic.com')
+                          ? {'Authorization': 'Bearer ${_currentData!['haToken']}'} 
+                          : null,
+                      width: imageSize,
+                      height: imageSize,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => _buildFallbackArt(imageSize),
+                    )
+                  else
+                    _buildFallbackArt(imageSize),
+                    
+                  if (_currentData!['badgeUrl'] != null)
+                    Positioned(
+                      bottom: 4,
+                      right: 4,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white24, width: 2),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 4, offset: const Offset(0, 2))
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: imageSize * 0.15,
+                          backgroundColor: Colors.black,
+                          backgroundImage: NetworkImage(
+                            _currentData!['badgeUrl'],
+                            headers: _currentData!['haToken'] != null 
+                                ? {'Authorization': 'Bearer ${_currentData!['haToken']}'} 
+                                : null,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
