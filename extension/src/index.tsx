@@ -1,4 +1,4 @@
-import { MenuBarExtra, openCommandPreferences, Icon, Cache, getPreferenceValues, open, launchCommand, LaunchType, showHUD } from "@raycast/api";
+import { MenuBarExtra, openCommandPreferences, Icon, Cache, getPreferenceValues, open, launchCommand, LaunchType, showHUD, LocalStorage } from "@raycast/api";
 import { useEffect, useState, useRef, Fragment } from "react";
 import { callService, Preferences } from "./api";
 import { useSonosPlayers } from "./useSonosPlayers";
@@ -10,6 +10,14 @@ export default function Command() {
   
   const [pinnedSpeaker, setPinnedSpeaker] = useState<string | undefined>(cache.get("pinnedSpeaker"));
   const [pinTrackName, setPinTrackName] = useState<boolean>(cache.get("pinTrackName") === "true");
+
+  const [allowlist, setAllowlist] = useState<string[]>([]);
+  const [blocklist, setBlocklist] = useState<string[]>([]);
+  
+  useEffect(() => {
+    LocalStorage.getItem<string>("allowlist").then(a => { if (a) setAllowlist(a.split("\n").map(s => s.trim()).filter(s => s.length > 0)); });
+    LocalStorage.getItem<string>("blocklist").then(b => { if (b) setBlocklist(b.split("\n").map(s => s.trim()).filter(s => s.length > 0)); });
+  }, []);
 
   const debugLog = (...args: any[]) => {
     if (prefs.debugLogging) console.log(new Date().toISOString(), "[DEBUG]", ...args);
@@ -194,6 +202,22 @@ export default function Command() {
     
     if (state === "playing" || state === "paused") {
       fullNowPlaying = [mediaTitle, mediaArtist].filter(Boolean).join(" - ") || "Unknown Media";
+      
+      const evalString = `${mediaTitle || ''} on ${player.attributes?.friendly_name || ''}`;
+      let allowed = true;
+      if (allowlist.length > 0) {
+        allowed = allowlist.some(r => new RegExp(r, 'i').test(evalString));
+      }
+      if (allowed && blocklist.length > 0) {
+        if (blocklist.some(r => new RegExp(r, 'i').test(evalString))) {
+          allowed = false;
+        }
+      }
+      
+      if (!allowed) {
+        fullNowPlaying = "Notification Blocked by Filter";
+      }
+      
       nowPlayingLines = wrapText(fullNowPlaying, maxLen);
     } else if (state === "unavailable" || state === "unknown") {
       fullNowPlaying = "Offline";

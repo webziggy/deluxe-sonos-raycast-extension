@@ -95,3 +95,35 @@ export async function getCompanionSleepTimer(speakerName: string): Promise<strin
   }
   return null;
 }
+
+export async function getCompanionHistory(): Promise<any[]> {
+  const auth = getAuthDetails();
+  if (!auth) return [];
+  try {
+    const res = await fetch(`http://127.0.0.1:${auth.port}/history`, {
+      headers: { Authorization: `Bearer ${auth.token}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.history || [];
+    }
+  } catch (e) {}
+  return [];
+}
+
+export async function syncFiltersToCompanion(allowlist: string[], blocklist: string[]): Promise<void> {
+  const auth = getAuthDetails();
+  if (!auth) return;
+  try {
+    await fetch(`http://127.0.0.1:${auth.port}/filters`, {
+      method: "POST",
+      headers: { 
+        "Authorization": `Bearer ${auth.token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ allowlist, blocklist })
+    });
+  } catch (e) {
+    console.error("Failed to sync filters", e);
+  }
+}

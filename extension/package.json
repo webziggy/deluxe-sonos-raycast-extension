@@ -28,6 +28,12 @@
       "title": "Sonos Queue",
       "description": "View and manage the current playback queue",
       "mode": "view"
+    },
+    {
+      "name": "filters",
+      "title": "Notification Filters",
+      "description": "Configure regex allowlists and blocklists for track notifications",
+      "mode": "view"
     }
   ],
   "preferences": [
