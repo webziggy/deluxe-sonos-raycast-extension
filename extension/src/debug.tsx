@@ -1,8 +1,17 @@
-import { List, ActionPanel, Action, Icon, showToast, Toast } from "@raycast/api";
+import { List, ActionPanel, Action, Icon, showToast, Toast, getPreferenceValues } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { getCompanionHistory, notifyCompanion } from "./companionClient";
 
 export default function Command() {
+  const prefs = getPreferenceValues();
+  if (!prefs.enableDebugCommands) {
+    return (
+      <List>
+        <List.EmptyView title="Debug Commands Disabled" description="Enable them in the extension preferences." />
+      </List>
+    );
+  }
+
   const [history, setHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -32,7 +41,7 @@ export default function Command() {
       {history.map((item, index) => (
         <List.Item
           key={index}
-          icon={item.badgeUrl || item.artUrl || Icon.Music}
+          icon={item.badgeUrl ? { source: item.badgeUrl } : (item.artUrl ? { source: item.artUrl } : Icon.Music)}
           title={item.track || "Unknown Track"}
           subtitle={`on ${item.speaker || "Unknown Speaker"}`}
           accessories={[

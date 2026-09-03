@@ -1,9 +1,17 @@
-import { List, ActionPanel, Action, Icon } from "@raycast/api";
+import { List, ActionPanel, Action, Icon, getPreferenceValues } from "@raycast/api";
 import { useEffect, useState } from "react";
-import fetch from "node-fetch";
 import { getCompanionDebugStates } from "./companionClient";
 
 export default function Command() {
+  const prefs = getPreferenceValues();
+  if (!prefs.enableDebugCommands) {
+    return (
+      <List>
+        <List.EmptyView title="Debug Commands Disabled" description="Enable them in the extension preferences." />
+      </List>
+    );
+  }
+
   const [states, setStates] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

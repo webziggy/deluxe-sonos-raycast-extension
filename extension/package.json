@@ -37,18 +37,26 @@
     },
     {
       "name": "debug",
-      "title": "Debug Notifications",
+      "title": "Sonos Debug Notifications",
       "description": "View and manually re-raise recent track notifications",
       "mode": "view"
     },
     {
       "name": "debug-states",
-      "title": "Debug States",
+      "title": "Sonos Debug States",
       "description": "View raw Home Assistant states for Sonos speakers",
       "mode": "view"
     }
   ],
   "preferences": [
+    {
+      "name": "enableDebugCommands",
+      "title": "Enable Debug Commands",
+      "description": "Show debug information when running debug commands",
+      "type": "checkbox",
+      "required": false,
+      "default": false
+    },
     {
       "name": "haUrl",
       "type": "textfield",
