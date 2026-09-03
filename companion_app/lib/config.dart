@@ -69,6 +69,17 @@ class AppConfig {
       'cardSize': size,
     }));
   }
+  static Future<void> saveFont(String font) async {
+    final file = await _file;
+    if (!await file.parent.exists()) {
+      await file.parent.create(recursive: true);
+    }
+    final existing = await loadConfig();
+    await file.writeAsString(jsonEncode({
+      ...existing ?? {},
+      'font': font,
+    }));
+  }
 
   static Future<Map<String, dynamic>?> loadConfig() async {
     try {

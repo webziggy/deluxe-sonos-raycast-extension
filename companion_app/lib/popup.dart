@@ -1,18 +1,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:window_manager/window_manager.dart';
 
 class NotificationPopup extends StatefulWidget {
   final Stream<Map<String, dynamic>> notificationStream;
   final String alignment;
   final String cardSize;
+  final String fontFamily;
 
   const NotificationPopup({
     super.key, 
     required this.notificationStream, 
     required this.alignment,
     required this.cardSize,
+    required this.fontFamily,
   });
 
   @override
@@ -104,6 +107,15 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
     _animController.dispose();
     _hideTimer?.cancel();
     super.dispose();
+  }
+
+  TextStyle _getFontStyle(TextStyle base) {
+    if (widget.fontFamily == 'Default') return base;
+    try {
+      return GoogleFonts.getFont(widget.fontFamily, textStyle: base);
+    } catch (e) {
+      return base;
+    }
   }
 
   @override
@@ -204,22 +216,22 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
                     children: [
                       Text(
                         'Now Playing on $speaker',
-                        style: TextStyle(
+                        style: _getFontStyle(TextStyle(
                           color: Colors.white.withOpacity(0.6),
                           fontSize: titleSize,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
-                        ),
+                        )),
                       ),
                       const SizedBox(height: 4),
                       Flexible(
                         child: AutoSizeText(
                           track,
-                          style: TextStyle(
+                          style: _getFontStyle(TextStyle(
                             color: Colors.white,
                             fontSize: trackSize,
                             fontWeight: FontWeight.bold,
-                          ),
+                          )),
                           maxLines: 4,
                           minFontSize: 12,
                           overflow: TextOverflow.ellipsis,

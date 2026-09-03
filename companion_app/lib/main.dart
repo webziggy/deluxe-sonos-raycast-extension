@@ -21,6 +21,7 @@ class MyHttpOverrides extends HttpOverrides {
 
 final ValueNotifier<String> alignmentNotifier = ValueNotifier<String>('Top Right');
 final ValueNotifier<String> cardSizeNotifier = ValueNotifier<String>('Small');
+final ValueNotifier<String> fontNotifier = ValueNotifier<String>('Default');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -137,6 +138,11 @@ void main() async {
     });
   }
 
+  Future<void> updateFont(String font) async {
+    await AppConfig.saveFont(font);
+    fontNotifier.value = font;
+  }
+
   Future<void> updateCardSize(String size) async {
     await AppConfig.saveCardSize(size);
     cardSizeNotifier.value = size;
@@ -176,6 +182,8 @@ void main() async {
 
   // Restore saved size
   final savedSize = savedConfig?['cardSize'] as String? ?? 'Small';
+  final savedFont = savedConfig?['font'] as String? ?? 'Default';
+  await updateFont(savedFont);
   await updateCardSize(savedSize);
 
   final Menu menu = Menu();
@@ -216,6 +224,19 @@ void main() async {
     final currentPos = config?['alignment'] as String? ?? 'Top Right';
 
     menuItems.addAll([
+            SubMenu(label: 'Font', children: [
+        MenuItemCheckbox(label: 'Default (System)', checked: fontNotifier.value == 'Default', onClicked: (_) async { await updateFont('Default'); await rebuildMenu(); }),
+        MenuItemCheckbox(label: 'Inter', checked: fontNotifier.value == 'Inter', onClicked: (_) async { await updateFont('Inter'); await rebuildMenu(); }),
+        MenuItemCheckbox(label: 'DM Sans', checked: fontNotifier.value == 'DM Sans', onClicked: (_) async { await updateFont('DM Sans'); await rebuildMenu(); }),
+        MenuItemCheckbox(label: 'Roboto', checked: fontNotifier.value == 'Roboto', onClicked: (_) async { await updateFont('Roboto'); await rebuildMenu(); }),
+        MenuItemCheckbox(label: 'Ubuntu', checked: fontNotifier.value == 'Ubuntu', onClicked: (_) async { await updateFont('Ubuntu'); await rebuildMenu(); }),
+        MenuItemCheckbox(label: 'Bricolage Grotesque', checked: fontNotifier.value == 'Bricolage Grotesque', onClicked: (_) async { await updateFont('Bricolage Grotesque'); await rebuildMenu(); }),
+        MenuItemCheckbox(label: 'Nunito', checked: fontNotifier.value == 'Nunito', onClicked: (_) async { await updateFont('Nunito'); await rebuildMenu(); }),
+        MenuItemCheckbox(label: 'Nunito Sans', checked: fontNotifier.value == 'Nunito Sans', onClicked: (_) async { await updateFont('Nunito Sans'); await rebuildMenu(); }),
+        MenuItemCheckbox(label: 'Poppins', checked: fontNotifier.value == 'Poppins', onClicked: (_) async { await updateFont('Poppins'); await rebuildMenu(); }),
+        MenuItemCheckbox(label: 'Montserrat', checked: fontNotifier.value == 'Montserrat', onClicked: (_) async { await updateFont('Montserrat'); await rebuildMenu(); }),
+      ]),
+      MenuSeparator(),
       MenuItemLabel(label: 'Size', enabled: false),
       MenuItemCheckbox(label: 'Small', checked: currentSize == 'Small', onClicked: (_) async { await updateCardSize('Small'); await rebuildMenu(); }),
       MenuItemCheckbox(label: 'Medium', checked: currentSize == 'Medium', onClicked: (_) async { await updateCardSize('Medium'); await rebuildMenu(); }),
@@ -276,11 +297,11 @@ class MyApp extends StatelessWidget {
             return ValueListenableBuilder<String>(
               valueListenable: cardSizeNotifier,
               builder: (context, size, child) {
-                return NotificationPopup(
+                return ValueListenableBuilder<String>(valueListenable: fontNotifier, builder: (context, font, child) { return NotificationPopup( fontFamily: font, 
                   notificationStream: globalServer.onNotify,
                   alignment: alignment,
                   cardSize: size,
-                );
+                ); });
               },
             );
           },
