@@ -46,8 +46,11 @@ void main() async {
   });
 
   // Init HA WebSocket
-  haWebSocket = HAWebSocket(onTrackChange: (trackData) {
-    globalServer.triggerNotifyLocally(trackData);
+  haWebSocket = HAWebSocket(onTrackChange: (trackData) async {
+    final config = await AppConfig.loadConfig();
+    if (config?['notificationsEnabled'] != false) {
+      globalServer.triggerNotifyLocally(trackData);
+    }
   });
 
   // Start the background server
@@ -137,27 +140,43 @@ void main() async {
   await updateCardSize(savedSize);
 
   final Menu menu = Menu();
-  await menu.buildFrom([
-    MenuItemLabel(label: 'Sonos Companion Running', enabled: false),
-    MenuSeparator(),
-    MenuItemLabel(label: 'Size: Small', onClicked: (_) => updateCardSize('Small')),
-    MenuItemLabel(label: 'Size: Medium', onClicked: (_) => updateCardSize('Medium')),
-    MenuItemLabel(label: 'Size: Large', onClicked: (_) => updateCardSize('Large')),
-    MenuSeparator(),
-    MenuItemLabel(label: 'Position: Top Right', onClicked: (_) => updateAlignment('Top Right')),
-    MenuItemLabel(label: 'Position: Top Left', onClicked: (_) => updateAlignment('Top Left')),
-    MenuItemLabel(label: 'Position: Top Center', onClicked: (_) => updateAlignment('Top Center')),
-    MenuItemLabel(label: 'Position: Bottom Right', onClicked: (_) => updateAlignment('Bottom Right')),
-    MenuItemLabel(label: 'Position: Bottom Left', onClicked: (_) => updateAlignment('Bottom Left')),
-    MenuItemLabel(label: 'Position: Bottom Center', onClicked: (_) => updateAlignment('Bottom Center')),
-    MenuSeparator(),
-    MenuItemLabel(label: 'Quit', onClicked: (menuItem) async {
-      await globalServer.stop();
-      haWebSocket.dispose();
-      exit(0);
-    }),
-  ]);
-  await systemTray.setContextMenu(menu);
+
+  Future<void> rebuildMenu() async {
+    final config = await AppConfig.loadConfig();
+    final isPaused = config?['notificationsEnabled'] == false;
+    
+    await menu.buildFrom([
+      MenuItemLabel(label: isPaused ? '⏸ Notifications Paused' : '✅ Notifications Active', enabled: false),
+      MenuSeparator(),
+      MenuItemLabel(
+        label: isPaused ? 'Resume Notifications' : 'Pause Notifications',
+        onClicked: (_) async {
+          await AppConfig.saveNotificationsEnabled(isPaused);
+          await rebuildMenu();
+        },
+      ),
+      MenuSeparator(),
+      MenuItemLabel(label: 'Size: Small', onClicked: (_) => updateCardSize('Small')),
+      MenuItemLabel(label: 'Size: Medium', onClicked: (_) => updateCardSize('Medium')),
+      MenuItemLabel(label: 'Size: Large', onClicked: (_) => updateCardSize('Large')),
+      MenuSeparator(),
+      MenuItemLabel(label: 'Position: Top Right', onClicked: (_) => updateAlignment('Top Right')),
+      MenuItemLabel(label: 'Position: Top Left', onClicked: (_) => updateAlignment('Top Left')),
+      MenuItemLabel(label: 'Position: Top Center', onClicked: (_) => updateAlignment('Top Center')),
+      MenuItemLabel(label: 'Position: Bottom Right', onClicked: (_) => updateAlignment('Bottom Right')),
+      MenuItemLabel(label: 'Position: Bottom Left', onClicked: (_) => updateAlignment('Bottom Left')),
+      MenuItemLabel(label: 'Position: Bottom Center', onClicked: (_) => updateAlignment('Bottom Center')),
+      MenuSeparator(),
+      MenuItemLabel(label: 'Quit', onClicked: (menuItem) async {
+        await globalServer.stop();
+        haWebSocket.dispose();
+        exit(0);
+      }),
+    ]);
+    await systemTray.setContextMenu(menu);
+  }
+
+  await rebuildMenu();
 
   // Handle system tray click events natively
   systemTray.registerSystemTrayEventHandler((eventName) {

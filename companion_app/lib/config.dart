@@ -21,6 +21,18 @@ class AppConfig {
     }));
   }
 
+  static Future<void> saveNotificationsEnabled(bool enabled) async {
+    final file = await _file;
+    if (!await file.parent.exists()) {
+      await file.parent.create(recursive: true);
+    }
+    final existing = await loadConfig();
+    await file.writeAsString(jsonEncode({
+      ...existing ?? {},
+      'notificationsEnabled': enabled,
+    }));
+  }
+
   static Future<void> saveAlignment(String alignment) async {
     final file = await _file;
     if (!await file.parent.exists()) {
