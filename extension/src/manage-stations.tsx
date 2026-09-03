@@ -102,7 +102,10 @@ function ConfigureStation({
   async function handleSubmit() {
     try {
       const allConfig = await getStationConfig();
-      allConfig[channelName] = { skipItunes, badgeUrl };
+      allConfig[channelName] = { 
+        skipItunes, 
+        badgeUrl: badgeUrl.trim() === "" ? null : badgeUrl.trim() 
+      };
       await saveStationConfig(allConfig);
       await showToast({ style: Toast.Style.Success, title: "Configuration Saved" });
       onSaved();
