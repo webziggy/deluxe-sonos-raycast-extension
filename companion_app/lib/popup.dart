@@ -130,10 +130,21 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
     double imageSize = 98; // Small default
     double titleSize = 12;
     double trackSize = 16;
+    double cardRadius = 12;
+    double textPadding = 16;
+    
     if (widget.cardSize == 'Medium') {
       imageSize = 128;
       titleSize = 14;
       trackSize = 20;
+      cardRadius = 16;
+      textPadding = 20;
+    } else if (widget.cardSize == 'Large') {
+      imageSize = 178;
+      titleSize = 18;
+      trackSize = 26;
+      cardRadius = 24;
+      textPadding = 28;
     } else if (widget.cardSize == 'Large') {
       imageSize = 178;
       titleSize = 18;
@@ -148,7 +159,7 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
           margin: const EdgeInsets.all(16),
           decoration: BoxDecoration(
           color: const Color(0xFF1E1E1E).withOpacity(0.95),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(cardRadius),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.2),
@@ -162,7 +173,7 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
           ),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(cardRadius),
           child: Row(
             children: [
               Stack(
@@ -209,7 +220,7 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: EdgeInsets.symmetric(horizontal: textPadding),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
