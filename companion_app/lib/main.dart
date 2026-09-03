@@ -216,16 +216,18 @@ void main() async {
     final currentPos = config?['alignment'] as String? ?? 'Top Right';
 
     menuItems.addAll([
-      MenuItemCheckbox(label: 'Size: Small', checked: currentSize == 'Small', onClicked: (_) async { await updateCardSize('Small'); await rebuildMenu(); }),
-      MenuItemCheckbox(label: 'Size: Medium', checked: currentSize == 'Medium', onClicked: (_) async { await updateCardSize('Medium'); await rebuildMenu(); }),
-      MenuItemCheckbox(label: 'Size: Large', checked: currentSize == 'Large', onClicked: (_) async { await updateCardSize('Large'); await rebuildMenu(); }),
+      MenuItemLabel(label: 'Size', enabled: false),
+      MenuItemCheckbox(label: 'Small', checked: currentSize == 'Small', onClicked: (_) async { await updateCardSize('Small'); await rebuildMenu(); }),
+      MenuItemCheckbox(label: 'Medium', checked: currentSize == 'Medium', onClicked: (_) async { await updateCardSize('Medium'); await rebuildMenu(); }),
+      MenuItemCheckbox(label: 'Large', checked: currentSize == 'Large', onClicked: (_) async { await updateCardSize('Large'); await rebuildMenu(); }),
       MenuSeparator(),
-      MenuItemCheckbox(label: 'Position: Top Right', checked: currentPos == 'Top Right', onClicked: (_) async { await updateAlignment('Top Right'); await rebuildMenu(); }),
-      MenuItemCheckbox(label: 'Position: Top Left', checked: currentPos == 'Top Left', onClicked: (_) async { await updateAlignment('Top Left'); await rebuildMenu(); }),
-      MenuItemCheckbox(label: 'Position: Top Center', checked: currentPos == 'Top Center', onClicked: (_) async { await updateAlignment('Top Center'); await rebuildMenu(); }),
-      MenuItemCheckbox(label: 'Position: Bottom Right', checked: currentPos == 'Bottom Right', onClicked: (_) async { await updateAlignment('Bottom Right'); await rebuildMenu(); }),
-      MenuItemCheckbox(label: 'Position: Bottom Left', checked: currentPos == 'Bottom Left', onClicked: (_) async { await updateAlignment('Bottom Left'); await rebuildMenu(); }),
-      MenuItemCheckbox(label: 'Position: Bottom Center', checked: currentPos == 'Bottom Center', onClicked: (_) async { await updateAlignment('Bottom Center'); await rebuildMenu(); }),
+      MenuItemLabel(label: 'Position', enabled: false),
+      MenuItemCheckbox(label: 'Top Right', checked: currentPos == 'Top Right', onClicked: (_) async { await updateAlignment('Top Right'); await rebuildMenu(); }),
+      MenuItemCheckbox(label: 'Top Left', checked: currentPos == 'Top Left', onClicked: (_) async { await updateAlignment('Top Left'); await rebuildMenu(); }),
+      MenuItemCheckbox(label: 'Top Center', checked: currentPos == 'Top Center', onClicked: (_) async { await updateAlignment('Top Center'); await rebuildMenu(); }),
+      MenuItemCheckbox(label: 'Bottom Right', checked: currentPos == 'Bottom Right', onClicked: (_) async { await updateAlignment('Bottom Right'); await rebuildMenu(); }),
+      MenuItemCheckbox(label: 'Bottom Left', checked: currentPos == 'Bottom Left', onClicked: (_) async { await updateAlignment('Bottom Left'); await rebuildMenu(); }),
+      MenuItemCheckbox(label: 'Bottom Center', checked: currentPos == 'Bottom Center', onClicked: (_) async { await updateAlignment('Bottom Center'); await rebuildMenu(); }),
       MenuSeparator(),
       MenuItemLabel(label: 'Quit', onClicked: (menuItem) async {
         await globalServer.stop();
