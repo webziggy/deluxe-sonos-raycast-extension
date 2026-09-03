@@ -183,7 +183,7 @@ void main() async {
     final config = await AppConfig.loadConfig();
     final isPaused = config?['notificationsEnabled'] == false;
     
-    List<MenuItem> menuItems = [
+    List<MenuItemBase> menuItems = [
       MenuItemLabel(label: isPaused ? '⏸ Notifications Paused' : '✅ Notifications Active', enabled: false),
       MenuSeparator(),
       MenuItemLabel(
