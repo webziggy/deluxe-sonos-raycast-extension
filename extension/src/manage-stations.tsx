@@ -76,7 +76,7 @@ function ConfigureStation({
 }) {
   const { pop } = useNavigation();
   const { players } = useSonosPlayers();
-  const [favourites, setFavourites] = useState<{title: string, thumbnail: string}[]>([]);
+  const [favourites, setFavourites] = useState<{title: string, items: any[]}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [skipItunes, setSkipItunes] = useState(currentConfig.skipItunes === true);
@@ -87,9 +87,41 @@ function ConfigureStation({
       if (players.length > 0) {
         try {
           const res = await fetchFavourites(players[0].entity_id) as any;
-          if (res?.children) {
-            setFavourites(res.children);
+          let rootItems: any[] = [];
+          if (res?.children) rootItems = res.children;
+          else if (res?.response?.children) rootItems = res.response.children;
+          else if (res?.result?.children) rootItems = res.result.children; 
+          
+          const folders = rootItems.filter(i => i.can_expand);
+          const nonFolders = rootItems.filter(i => !i.can_expand);
+          const newSections = [];
+          
+          if (nonFolders.length > 0) {
+            newSections.push({ title: "Favourites", items: nonFolders });
           }
+          
+          if (folders.length > 0) {
+            try {
+              const nestedPromises = folders.map(f => fetchFavourites(players[0].entity_id, f.media_content_type, f.media_content_id));
+              const results = await Promise.all(nestedPromises);
+              
+              results.forEach((r: any, index: number) => {
+                const folderTitle = folders[index].title;
+                let children = [];
+                if (r?.children) children = r.children;
+                else if (r?.response?.children) children = r.response.children;
+                else if (r?.result?.children) children = r.result.children;
+                
+                if (children.length > 0) {
+                  newSections.push({ title: folderTitle, items: children });
+                }
+              });
+            } catch(e) {
+              console.error("Failed to fetch nested folders", e);
+            }
+          }
+          
+          setFavourites(newSections);
         } catch (e) {
           console.error(e);
         }
@@ -143,16 +175,30 @@ function ConfigureStation({
         info="Pick a favourite to instantly copy its native Sonos thumbnail URL into the Custom Badge URL field."
         onChange={(val) => {
           if (val && val !== "_none_") {
-            const fav = favourites.find(f => f.title === val);
-            if (fav && fav.thumbnail) {
-              setBadgeUrl(getFullImageUrl(fav.thumbnail));
+            // Find the item inside the nested sections
+            let foundFav: any = null;
+            for (const section of favourites) {
+              foundFav = section.items.find(f => f.title === val);
+              if (foundFav) break;
+            }
+            if (foundFav && foundFav.thumbnail) {
+              setBadgeUrl(getFullImageUrl(foundFav.thumbnail));
             }
           }
         }}
       >
         <Form.Dropdown.Item value="_none_" title="-- Select a Favourite --" />
-        {favourites.map(fav => (
-          <Form.Dropdown.Item key={fav.title} value={fav.title} title={fav.title} icon={fav.thumbnail ? getFullImageUrl(fav.thumbnail) : Icon.Image} />
+        {favourites.map(section => (
+          <Form.Dropdown.Section key={section.title} title={section.title}>
+            {section.items.map(fav => (
+              <Form.Dropdown.Item 
+                key={fav.title} 
+                value={fav.title} 
+                title={fav.title} 
+                icon={fav.thumbnail ? getFullImageUrl(fav.thumbnail) : Icon.Image} 
+              />
+            ))}
+          </Form.Dropdown.Section>
         ))}
       </Form.Dropdown>
 
