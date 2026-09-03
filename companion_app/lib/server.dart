@@ -14,6 +14,7 @@ class LocalServer {
   late String _secretToken;
   final Function(String haUrl, String haToken) onConfigUpdate;
   final List<Map<String, dynamic>> trackHistory = [];
+  List<dynamic> Function()? getDebugStates;
 
   final _notifyController = StreamController<Map<String, dynamic>>.broadcast();
   Stream<Map<String, dynamic>> get onNotify => _notifyController.stream;
@@ -47,7 +48,8 @@ class LocalServer {
     });
 
     router.get('/debug_states', (Request request) {
-      return Response.ok(jsonEncode(rawStatesCache), headers: {'Content-Type': 'application/json'});
+      final states = getDebugStates?.call() ?? [];
+      return Response.ok(jsonEncode(states), headers: {'Content-Type': 'application/json'});
     });
 
     // Notify endpoint

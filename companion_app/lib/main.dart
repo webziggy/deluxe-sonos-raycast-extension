@@ -96,6 +96,7 @@ void main() async {
     await AppConfig.saveConfig(haUrl, haToken);
     haWebSocket.connect(haUrl, haToken);
   });
+  globalServer.getDebugStates = () => haWebSocket.rawStatesCache;
   await globalServer.start();
 
   // Load existing config on boot

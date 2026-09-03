@@ -14,6 +14,7 @@ class HAWebSocket {
   Timer? _pingTimer;
 
   final Map<String, String> _lastTracks = {};
+  List<dynamic> rawStatesCache = [];
 
   HAWebSocket({required this.onTrackChange});
 
@@ -75,6 +76,7 @@ class HAWebSocket {
       _handleEvent(data['event'], false);
     } else if (type == 'result' && data['id'] == _getStatesMsgId && data['success'] == true) {
       final states = data['result'] as List<dynamic>;
+      rawStatesCache = states;
       for (var stateObj in states) {
         if (stateObj['entity_id'].toString().startsWith('media_player.')) {
           _handleEvent({
@@ -105,13 +107,26 @@ class HAWebSocket {
 
   void _handleEvent(Map<String, dynamic> event, bool isInitialSync) async {
     if (event['event_type'] != 'state_changed') return;
+    
     final data = event['data'];
     if (data == null) return;
-    final entityId = data['entity_id'] as String;
     
+    final entityId = data['entity_id'] as String;
     if (!entityId.startsWith('media_player.')) return;
     
     final newState = data['new_state'];
+    
+    // Update cache for debugging
+    if (!isInitialSync && newState != null) {
+      final existingIndex = rawStatesCache.indexWhere((s) => s['entity_id'] == entityId);
+      if (existingIndex >= 0) {
+        rawStatesCache[existingIndex] = newState;
+      } else {
+        rawStatesCache.add(newState);
+      }
+    }
+
+    if (newState == null) return;
     if (newState == null) return;
     
     final attrs = newState['attributes'];
@@ -152,13 +167,24 @@ class HAWebSocket {
         String? badgeUrl;
         
         // iTunes API Fetcher for Radio Streams
-        // A stream typically has a missing mediaArtist, but a mediaTitle with a hyphen
-        if ((mediaArtist == null || mediaArtist.trim().isEmpty) && 
-             mediaTitle != null && 
-             mediaTitle.contains(' - ')) {
-           
+        // A stream typically packs "Artist - Song" into mediaTitle, 
+        // and sometimes uses mediaArtist for the Station Name (e.g. BBC Radio 2)
+        bool isLikelyRadioStream = false;
+        String itunesQuery = '';
+        
+        if (mediaTitle != null && mediaTitle.contains(' - ')) {
+          isLikelyRadioStream = true;
+          itunesQuery = mediaTitle;
+        } else if ((mediaArtist == null || mediaArtist.trim().isEmpty) && mediaTitle != null) {
+          isLikelyRadioStream = true;
+          itunesQuery = mediaTitle;
+        }
+
+        if (isLikelyRadioStream && itunesQuery.isNotEmpty) {
            try {
-             final query = Uri.encodeQueryComponent(mediaTitle);
+             // Apple Music handles "Artist - Track" better if we just replace the hyphen with a space
+             final cleanQuery = itunesQuery.replaceAll(' - ', ' ');
+             final query = Uri.encodeQueryComponent(cleanQuery);
              final url = Uri.parse('https://itunes.apple.com/search?term=$query&entity=song&limit=1');
              final response = await http.get(url).timeout(const Duration(milliseconds: 1500));
              
