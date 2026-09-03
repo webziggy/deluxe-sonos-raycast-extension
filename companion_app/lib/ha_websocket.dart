@@ -167,12 +167,17 @@ class HAWebSocket {
         String? badgeUrl;
         
         // iTunes API Fetcher for Radio Streams
-        // A stream typically packs "Artist - Song" into mediaTitle, 
-        // and sometimes uses mediaArtist for the Station Name (e.g. BBC Radio 2)
+        // Radio streams often populate `media_channel` (e.g. "BBC Radio 2").
+        // Or they pack "Artist - Song" into `mediaTitle`.
+        // Sometimes integrations even swap artist and title (e.g. Title="Artist", Artist="Song").
         bool isLikelyRadioStream = false;
         String itunesQuery = '';
         
-        if (mediaTitle != null && mediaTitle.contains(' - ')) {
+        if (attrs['media_channel'] != null) {
+          isLikelyRadioStream = true;
+          // Combine whatever HA parsed into the query
+          itunesQuery = "${mediaTitle ?? ''} ${mediaArtist ?? ''}".trim();
+        } else if (mediaTitle != null && mediaTitle.contains(' - ')) {
           isLikelyRadioStream = true;
           itunesQuery = mediaTitle;
         } else if ((mediaArtist == null || mediaArtist.trim().isEmpty) && mediaTitle != null) {
@@ -182,8 +187,8 @@ class HAWebSocket {
 
         if (isLikelyRadioStream && itunesQuery.isNotEmpty) {
            try {
-             // Apple Music handles "Artist - Track" better if we just replace the hyphen with a space
-             final cleanQuery = itunesQuery.replaceAll(' - ', ' ');
+             // Apple Music handles "Artist - Track" better if we just replace hyphens with a space
+             final cleanQuery = itunesQuery.replaceAll(' - ', ' ').replaceAll(RegExp(r'\s+'), ' ');
              final query = Uri.encodeQueryComponent(cleanQuery);
              final url = Uri.parse('https://itunes.apple.com/search?term=$query&entity=song&limit=1');
              final response = await http.get(url).timeout(const Duration(milliseconds: 1500));
