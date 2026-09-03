@@ -42,8 +42,12 @@ class LocalServer {
     final router = Router();
 
     // Health check endpoint
-    router.get('/health', (Request request) {
-      return Response.ok(jsonEncode({'status': 'ok'}), headers: {'content-type': 'application/json'});
+    router.get('/history', (Request request) {
+      return Response.ok(jsonEncode(trackHistory), headers: {'Content-Type': 'application/json'});
+    });
+
+    router.get('/debug_states', (Request request) {
+      return Response.ok(jsonEncode(rawStatesCache), headers: {'Content-Type': 'application/json'});
     });
 
     // Notify endpoint
