@@ -6,13 +6,20 @@ import {
   Toast,
   LocalStorage,
 } from "@raycast/api";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getCompanionHistory, syncFiltersToCompanion } from "./companionClient";
 
 export default function FiltersCommand() {
   const [allowlist, setAllowlist] = useState<string>("");
   const [blocklist, setBlocklist] = useState<string>("");
   const [history, setHistory] = useState<string>("Loading...");
+
+  const allowlistRef = useRef(allowlist);
+  const blocklistRef = useRef(blocklist);
+  useEffect(() => {
+    allowlistRef.current = allowlist;
+    blocklistRef.current = blocklist;
+  }, [allowlist, blocklist]);
 
   useEffect(() => {
     async function load() {
@@ -33,11 +40,9 @@ export default function FiltersCommand() {
     load();
   }, []);
 
-  async function submit(values: any) {
-    // Raycast sometimes omits fully controlled components from the 'values' payload.
-    // We fall back to the React state variables to guarantee we have the exact text.
-    const aStr = values.allowlist ?? allowlist ?? "";
-    const bStr = values.blocklist ?? blocklist ?? "";
+  async function submit() {
+    const aStr = allowlistRef.current;
+    const bStr = blocklistRef.current;
 
     const aList = aStr
       .split("\n")
@@ -77,14 +82,18 @@ export default function FiltersCommand() {
 
     await syncFiltersToCompanion(aList, bList);
 
-    showToast({ title: "Filters Saved", style: Toast.Style.Success });
+    showToast({
+      title: "Filters Saved",
+      message: `Allowed: ${aList.length} | Blocked: ${bList.length}`,
+      style: Toast.Style.Success,
+    });
   }
 
   return (
     <Form
       actions={
         <ActionPanel>
-          <Action.SubmitForm title="Save Filters" onSubmit={submit} />
+          <Action.SubmitForm title="Save Filters" onSubmit={() => submit()} />
         </ActionPanel>
       }
     >
