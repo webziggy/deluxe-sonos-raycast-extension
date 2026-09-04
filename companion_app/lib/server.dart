@@ -195,6 +195,30 @@ class LocalServer {
       }
     });
 
+
+    // Pinned Speaker endpoint
+    router.post('/pinned_speaker', (Request request) async {
+      final auth = request.headers['authorization'];
+      if (auth != 'Bearer $_secretToken') {
+        return Response.forbidden('Invalid or missing token');
+      }
+      try {
+        final payload = await request.readAsString();
+        final data = jsonDecode(payload);
+        final speaker = data['speaker'] as String?;
+        await AppConfig.savePinnedSpeaker(speaker);
+        
+        // Notify the app to rebuild the menu to show the active speaker
+        startRebuildTimer(() async {
+          // You could add a callback here if needed
+        });
+        
+        return Response.ok(jsonEncode({'success': true}));
+      } catch (e) {
+        return Response.badRequest(body: 'Invalid JSON payload');
+      }
+    });
+
     // History endpoint
     router.get('/history', (Request request) async {
       final auth = request.headers['authorization'];

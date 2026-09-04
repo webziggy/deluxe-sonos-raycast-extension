@@ -68,6 +68,13 @@ void main() async {
 
     final config = await AppConfig.loadConfig();
     
+    final pinnedSpeaker = config?['pinnedSpeaker'] as String?;
+    final trackEntityId = trackData['entityId'] as String?;
+    
+    if (pinnedSpeaker != null && pinnedSpeaker.isNotEmpty && trackEntityId != pinnedSpeaker) {
+      return; // Ignore notifications for unpinned speakers
+    }
+    
     if (config?['notificationsEnabled'] == false) {
       return;
     }
@@ -191,8 +198,12 @@ void main() async {
   Future<void> rebuildMenu() async {
     final config = await AppConfig.loadConfig();
     final isPaused = config?['notificationsEnabled'] == false;
+    final pinnedSpeaker = config?['pinnedSpeaker'] as String?;
+    final activeSpeaker = pinnedSpeaker != null ? pinnedSpeaker.split('.').last : 'All Speakers';
     
     List<MenuItemBase> menuItems = [
+      MenuItemLabel(label: 'Active Speaker: $activeSpeaker', enabled: false),
+      MenuSeparator(),
       MenuItemLabel(label: isPaused ? '⏸ Notifications Paused' : '✅ Notifications Active', enabled: false),
       MenuSeparator(),
       MenuItemLabel(

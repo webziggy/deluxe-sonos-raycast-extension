@@ -81,6 +81,18 @@ class AppConfig {
     }));
   }
 
+  static Future<void> savePinnedSpeaker(String? speaker) async {
+    final file = await _file;
+    if (!await file.parent.exists()) {
+      await file.parent.create(recursive: true);
+    }
+    final existing = await loadConfig();
+    await file.writeAsString(jsonEncode({
+      ...existing ?? {},
+      'pinnedSpeaker': speaker,
+    }));
+  }
+
   static Future<Map<String, dynamic>?> loadConfig() async {
     try {
       final file = await _file;

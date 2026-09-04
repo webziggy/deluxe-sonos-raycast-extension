@@ -241,6 +241,7 @@ class HAWebSocket {
         onTrackChange({
           'track': trackString,
           'speaker': friendlyName,
+          'entityId': entityId,
           'artUrl': artUrl,
           'badgeUrl': badgeUrl,
           'haToken': _token,
