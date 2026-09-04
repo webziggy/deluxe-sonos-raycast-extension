@@ -70,10 +70,6 @@ class LocalServer {
       }
     });
 
-    router.get('/history', (Request request) {
-      return Response.ok(jsonEncode(trackHistory), headers: {'Content-Type': 'application/json'});
-    });
-
     router.get('/debug_states', (Request request) {
       final states = getDebugStates?.call() ?? [];
       return Response.ok(jsonEncode(states), headers: {'Content-Type': 'application/json'});

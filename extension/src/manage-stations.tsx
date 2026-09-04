@@ -16,6 +16,7 @@ import {
 } from "./companionClient";
 import { useSonosPlayers } from "./useSonosPlayers";
 import { fetchFavourites, getFullImageUrl } from "./api";
+import { getSpelling } from "./locale";
 
 export default function Command() {
   const [stations, setStations] = useState<
@@ -230,6 +231,12 @@ function ConfigureStation({
             title="Save Configuration"
             onSubmit={handleSubmit}
           />
+          {badgeUrl.trim() !== "" && (
+            <Action.OpenInBrowser
+              title="Preview Custom Badge in Browser"
+              url={badgeUrl}
+            />
+          )}
         </ActionPanel>
       }
     >
@@ -248,7 +255,7 @@ function ConfigureStation({
 
       <Form.Dropdown
         id="favouriteMatch"
-        title="Link to Sonos Favourite"
+        title={`Link to Sonos ${getSpelling("Favourite")}`}
         info="Pick a favourite to instantly copy its native Sonos thumbnail URL into the Custom Badge URL field."
         value={favouriteMatch}
         onChange={(val) => {
@@ -266,7 +273,10 @@ function ConfigureStation({
           }
         }}
       >
-        <Form.Dropdown.Item value="_none_" title="-- Select a Favourite --" />
+        <Form.Dropdown.Item
+          value="_none_"
+          title={`-- Select a ${getSpelling("Favourite")} --`}
+        />
         {favourites.map((section) => (
           <Form.Dropdown.Section key={section.title} title={section.title}>
             {section.items.map((fav) => (
