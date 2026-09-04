@@ -70,11 +70,19 @@
       "default": false
     },
     {
+      "name": "haUrlLocal",
+      "type": "textfield",
+      "required": false,
+      "title": "Local Home Assistant URL",
+      "description": "Optional. If provided, the extension will attempt to connect here first before falling back to the external URL.",
+      "placeholder": "http://homeassistant.local:8123"
+    },
+    {
       "name": "haUrl",
       "type": "textfield",
       "required": true,
-      "title": "Home Assistant URL",
-      "description": "The URL of your Home Assistant instance",
+      "title": "External Home Assistant URL",
+      "description": "The external URL of your Home Assistant instance (e.g. Nabu Casa)",
       "placeholder": "http://homeassistant.local:8123"
     },
     {

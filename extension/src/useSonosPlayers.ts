@@ -39,8 +39,9 @@ export function useSonosPlayers(): UseSonosPlayersResult {
       if (isActive) {
         console.log("Sonos Companion App detected and active!");
         const prefs = getPreferenceValues();
-        import("./companionClient").then(({ sendConfigToCompanion }) => {
-          sendConfigToCompanion(prefs.haUrl, prefs.haToken);
+        import("./companionClient").then(async ({ sendConfigToCompanion }) => {
+          const activeUrl = await getActiveHaUrl();
+          sendConfigToCompanion(activeUrl, prefs.haToken as string);
         });
       }
     });

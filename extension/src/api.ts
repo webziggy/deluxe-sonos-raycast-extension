@@ -13,6 +13,7 @@ import { getPreferenceValues } from "@raycast/api";
 (global as any).WebSocket = WebSocket;
 
 export interface Preferences {
+  haUrlLocal?: string;
   haUrl: string;
   haToken: string;
   defaultSpeaker?: string;
@@ -23,13 +24,53 @@ export interface Preferences {
 
 let connectionPromise: Promise<Connection> | null = null;
 
+async function resolveActiveUrl(
+  localUrl: string | undefined,
+  externalUrl: string,
+  token: string,
+): Promise<string> {
+  const ext = externalUrl.trim().replace(/\/+$/, "");
+  if (localUrl && localUrl.trim() !== "") {
+    const loc = localUrl.trim().replace(/\/+$/, "");
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1500); // 1.5s timeout
+      const res = await fetch(`${loc}/api/`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        if (getPreferenceValues<Preferences>().debugLogging)
+          console.log(`[DEBUG] Connected to Local HA URL: ${loc}`);
+        return loc;
+      }
+    } catch (e) {
+      if (getPreferenceValues<Preferences>().debugLogging)
+        console.log(
+          `[DEBUG] Local HA URL unreachable, falling back to external...`,
+        );
+    }
+  }
+  return ext;
+}
+
+export async function getActiveHaUrl(): Promise<string> {
+  const prefs = getPreferenceValues<Preferences>();
+  return await resolveActiveUrl(prefs.haUrlLocal, prefs.haUrl, prefs.haToken);
+}
+
 export async function getHAConnection(): Promise<Connection> {
   if (connectionPromise) {
     return connectionPromise;
   }
 
   const preferences = getPreferenceValues<Preferences>();
-  const baseUrl = preferences.haUrl.trim().replace(/\/+$/, "");
+  const baseUrl = await resolveActiveUrl(
+    preferences.haUrlLocal,
+    preferences.haUrl,
+    preferences.haToken,
+  );
   const auth = createLongLivedTokenAuth(baseUrl, preferences.haToken);
 
   connectionPromise = createConnection({ auth }).catch((err) => {
@@ -93,7 +134,11 @@ export function getFullImageUrl(path?: string): string {
   if (!path) return "";
   if (path.startsWith("http")) return path;
   const preferences = getPreferenceValues<Preferences>();
-  const baseUrl = preferences.haUrl.trim().replace(/\/+$/, "");
+  const baseUrl = await resolveActiveUrl(
+    preferences.haUrlLocal,
+    preferences.haUrl,
+    preferences.haToken,
+  );
   return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
