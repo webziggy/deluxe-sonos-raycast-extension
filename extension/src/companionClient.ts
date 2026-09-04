@@ -62,7 +62,7 @@ export async function notifyCompanion(payload: any): Promise<void> {
       body: JSON.stringify(payload),
     });
   } catch (e) {
-    console.error("Failed to notify companion app", e);
+    
   }
 }
 
@@ -83,7 +83,7 @@ export async function sendConfigToCompanion(
       body: JSON.stringify({ haUrl, haToken }),
     });
   } catch (e) {
-    console.error("Failed to send config to companion app", e);
+    
   }
 }
 
@@ -106,7 +106,7 @@ export async function getCompanionSleepTimer(
       return data.remaining || null; // e.g. "00:15:00"
     }
   } catch (e) {
-    console.error("Failed to get sleep timer from companion", e);
+    
   }
   return null;
 }
@@ -142,7 +142,7 @@ export async function syncFiltersToCompanion(
       body: JSON.stringify({ allowlist, blocklist }),
     });
   } catch (e) {
-    console.error("Failed to sync filters", e);
+    
   }
 }
 
@@ -203,7 +203,7 @@ export async function saveStationConfig(
       body: JSON.stringify(config),
     });
   } catch (e) {
-    console.error("Failed to save station config to companion", e);
+    
   }
 }
 
