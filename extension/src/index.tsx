@@ -1,6 +1,7 @@
 import {
   syncPinnedSpeakerToCompanion,
   syncFiltersToCompanion,
+  saveStationConfig,
 } from "./companionClient";
 import {
   MenuBarExtra,
@@ -125,18 +126,6 @@ export default function Command() {
   } = useSonosPlayers();
 
   // Use absolute time to avoid macOS App Nap freezing our timers
-
-  if (error) {
-    return (
-      <MenuBarExtra icon={Icon.Warning} title="Sonos Error">
-        <MenuBarExtra.Item title="Connection Error" subtitle={error} />
-        <MenuBarExtra.Item
-          title="Open Preferences..."
-          onAction={openCommandPreferences}
-        />
-      </MenuBarExtra>
-    );
-  }
 
   const sortedPlayers = [...allPlayers].sort((a, b) => {
     if (a.entity_id === pinnedSpeaker) return -1;
@@ -818,6 +807,18 @@ export default function Command() {
       </MenuBarExtra.Submenu>
     );
   };
+
+  if (error) {
+    return (
+      <MenuBarExtra icon={Icon.Warning} title="Sonos Error">
+        <MenuBarExtra.Item title="Connection Error" subtitle={error} />
+        <MenuBarExtra.Item
+          title="Open Preferences..."
+          onAction={openCommandPreferences}
+        />
+      </MenuBarExtra>
+    );
+  }
 
   return (
     <MenuBarExtra icon={Icon.Music} isLoading={isLoading}>
