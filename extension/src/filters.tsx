@@ -1,4 +1,11 @@
-import { Form, ActionPanel, Action, showToast, Toast, LocalStorage } from "@raycast/api";
+import {
+  Form,
+  ActionPanel,
+  Action,
+  showToast,
+  Toast,
+  LocalStorage,
+} from "@raycast/api";
 import { useEffect, useState } from "react";
 import { getCompanionHistory, syncFiltersToCompanion } from "./companionClient";
 
@@ -16,7 +23,9 @@ export default function FiltersCommand() {
 
       const hist = await getCompanionHistory();
       if (hist.length > 0) {
-        setHistory(hist.map((h: any) => `• ${h.track} on ${h.speaker}`).join("\n"));
+        setHistory(
+          hist.map((h: any) => `• ${h.track} on ${h.speaker}`).join("\n"),
+        );
       } else {
         setHistory("No recent tracks recorded yet.");
       }
@@ -24,12 +33,30 @@ export default function FiltersCommand() {
     load();
   }, []);
 
-  async function submit(values: { allowlist: string, blocklist: string }) {
-    await LocalStorage.setItem("allowlist", values.allowlist);
-    await LocalStorage.setItem("blocklist", values.blocklist);
+  async function submit(values: { allowlist?: string; blocklist?: string }) {
+    const aStr = values.allowlist ?? "";
+    const bStr = values.blocklist ?? "";
 
-    const aList = values.allowlist.split("\n").map(s => s.trim()).filter(s => s.length > 0);
-    const bList = values.blocklist.split("\n").map(s => s.trim()).filter(s => s.length > 0);
+    if (aStr) {
+      await LocalStorage.setItem("allowlist", aStr);
+    } else {
+      await LocalStorage.removeItem("allowlist");
+    }
+
+    if (bStr) {
+      await LocalStorage.setItem("blocklist", bStr);
+    } else {
+      await LocalStorage.removeItem("blocklist");
+    }
+
+    const aList = aStr
+      .split("\n")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    const bList = bStr
+      .split("\n")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
     await syncFiltersToCompanion(aList, bList);
 
     showToast({ title: "Filters Saved", style: Toast.Style.Success });
@@ -43,12 +70,27 @@ export default function FiltersCommand() {
         </ActionPanel>
       }
     >
-      <Form.Description title="Regex Rules" text="Enter one regular expression per line. If the Allowlist is used, EVERYTHING else is blocked." />
-      <Form.TextArea id="allowlist" title="Allowlist" value={allowlist} onChange={setAllowlist} placeholder=".*(My Favorite Song).*$" />
-      <Form.TextArea id="blocklist" title="Blocklist" value={blocklist} onChange={setBlocklist} placeholder=".*on Kitchen Speaker.*$" />
-      
+      <Form.Description
+        title="Regex Rules"
+        text="Enter one regular expression per line. If the Allowlist is used, EVERYTHING else is blocked."
+      />
+      <Form.TextArea
+        id="allowlist"
+        title="Allowlist"
+        value={allowlist}
+        onChange={setAllowlist}
+        placeholder=".*(My Favorite Song).*$"
+      />
+      <Form.TextArea
+        id="blocklist"
+        title="Blocklist"
+        value={blocklist}
+        onChange={setBlocklist}
+        placeholder=".*on Kitchen Speaker.*$"
+      />
+
       <Form.Separator />
-      
+
       <Form.Description title="Recent Tracks History" text={history} />
     </Form>
   );
