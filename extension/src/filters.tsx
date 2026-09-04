@@ -37,6 +37,30 @@ export default function FiltersCommand() {
     const aStr = values.allowlist ?? "";
     const bStr = values.blocklist ?? "";
 
+    const aList = aStr
+      .split("\n")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    const bList = bStr
+      .split("\n")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    // Validate Regex Patterns
+    for (const p of [...aList, ...bList]) {
+      try {
+        new RegExp(p);
+      } catch (e: any) {
+        showToast({
+          title: "Invalid Regex Pattern",
+          message: e.message || p,
+          style: Toast.Style.Failure,
+        });
+        return; // Halt saving
+      }
+    }
+
     if (aStr) {
       await LocalStorage.setItem("allowlist", aStr);
     } else {
@@ -49,14 +73,6 @@ export default function FiltersCommand() {
       await LocalStorage.removeItem("blocklist");
     }
 
-    const aList = aStr
-      .split("\n")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-    const bList = bStr
-      .split("\n")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
     await syncFiltersToCompanion(aList, bList);
 
     showToast({ title: "Filters Saved", style: Toast.Style.Success });
