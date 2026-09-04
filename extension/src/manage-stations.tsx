@@ -94,7 +94,11 @@ export default function Command() {
                 ? "Saved Configuration"
                 : `Example: ${sample.title} - ${sample.artist}`
             }
-            icon={hasCustomBadge ? { source: conf.badgeUrl } : Icon.Signal3}
+            icon={
+              hasCustomBadge
+                ? { source: conf.badgeUrl?.replace(/^http:\/\//i, "https://") }
+                : Icon.Signal3
+            }
             accessories={accessories}
             actions={
               <ActionPanel>
@@ -138,6 +142,9 @@ function ConfigureStation({
     currentConfig.skipItunes === true,
   );
   const [badgeUrl, setBadgeUrl] = useState(currentConfig.badgeUrl || "");
+  const [favouriteMatch, setFavouriteMatch] = useState(
+    currentConfig.linkedFavourite || "_none_",
+  );
 
   useEffect(() => {
     async function fetchFavs() {
@@ -200,6 +207,7 @@ function ConfigureStation({
       allConfig[channelName] = {
         skipItunes,
         badgeUrl: badgeUrl.trim() === "" ? null : badgeUrl.trim(),
+        linkedFavourite: favouriteMatch === "_none_" ? null : favouriteMatch,
       };
       await saveStationConfig(allConfig);
       await showToast({
@@ -242,7 +250,9 @@ function ConfigureStation({
         id="favouriteMatch"
         title="Link to Sonos Favourite"
         info="Pick a favourite to instantly copy its native Sonos thumbnail URL into the Custom Badge URL field."
+        value={favouriteMatch}
         onChange={(val) => {
+          setFavouriteMatch(val);
           if (val && val !== "_none_") {
             // Find the item inside the nested sections
             let foundFav: any = null;
