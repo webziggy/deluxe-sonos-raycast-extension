@@ -93,26 +93,30 @@ export default function FiltersCommand() {
         </ActionPanel>
       }
     >
-      <Form.Description
-        title="Regex Rules"
-        text="Enter one regular expression per line. If the Allowlist is used, EVERYTHING else is blocked."
-      />
-      <Form.TextArea
-        id="allowlist"
-        title="Allowlist"
-        defaultValue={initialAllowlist}
-        placeholder=".*(My Favorite Song).*$"
-      />
-      <Form.TextArea
-        id="blocklist"
-        title="Blocklist"
-        defaultValue={initialBlocklist}
-        placeholder=".*on Kitchen Speaker.*$"
-      />
+      {!isLoading && (
+        <>
+          <Form.Description
+            title="Regex Rules"
+            text="Enter one regular expression per line. If the Allowlist is used, EVERYTHING else is blocked."
+          />
+          <Form.TextArea
+            id="allowlist"
+            title="Allowlist"
+            defaultValue={initialAllowlist}
+            placeholder=".*(My Favorite Song).*$"
+          />
+          <Form.TextArea
+            id="blocklist"
+            title="Blocklist"
+            defaultValue={initialBlocklist}
+            placeholder=".*on Kitchen Speaker.*$"
+          />
 
-      <Form.Separator />
+          <Form.Separator />
 
-      <Form.Description title="Recent Tracks History" text={history} />
+          <Form.Description title="Recent Tracks History" text={history} />
+        </>
+      )}
     </Form>
   );
 }
