@@ -140,10 +140,12 @@ export async function fetchQueue(entityId: string) {
 export function getFullImageUrl(path?: string): string {
   if (!path) return "";
   if (path.startsWith("http")) return path;
+  
   const preferences = getPreferenceValues<Preferences>();
-  // We cannot await here, so we'll just optimistically use the external URL for images if it hasn't been cached,
-  // though typically activeBaseUrl is initialized immediately on boot.
-  const baseUrl = activeBaseUrl || preferences.haUrl.trim().replace(/\/+$/, "");
+  // ALWAYS use the external haUrl for images to satisfy macOS App Transport Security (ATS).
+  // Raycast's native UI elements will silently refuse to render images served over http://.
+  const baseUrl = preferences.haUrl.trim().replace(/\/+$/, "");
+  
   return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
