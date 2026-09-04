@@ -120,6 +120,7 @@ void main() async {
   await systemTray.initSystemTray(
     title: "",
     iconPath: Platform.isWindows ? 'assets/app_icon.ico' : 'assets/app_iconTemplate.png',
+    isTemplate: true,
   );
 
   Future<void> updateAlignment(String alignment) async {
