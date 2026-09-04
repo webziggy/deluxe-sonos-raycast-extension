@@ -111,8 +111,12 @@ void main() async {
   // Load existing config on boot
   final savedConfig = await AppConfig.loadConfig();
   if (savedConfig != null) {
-    print('Found saved HA config. Connecting...');
-    haWebSocket.connect(savedConfig['haUrl'], savedConfig['haToken']);
+    final haUrl = savedConfig['haUrl'] as String?;
+    final haToken = savedConfig['haToken'] as String?;
+    if (haUrl != null && haToken != null) {
+      print('Found saved HA config. Connecting...');
+      haWebSocket.connect(haUrl, haToken);
+    }
   }
 
   // Initialize System Tray
