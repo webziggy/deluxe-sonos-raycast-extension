@@ -25,6 +25,9 @@ class StationConfig {
   static Future<void> saveConfig(Map<String, dynamic> config) async {
     try {
       final file = await _configFile;
+      if (!await file.parent.exists()) {
+        await file.parent.create(recursive: true);
+      }
       await file.writeAsString(jsonEncode(config));
     } catch (e) {
       print('Error saving station config: $e');

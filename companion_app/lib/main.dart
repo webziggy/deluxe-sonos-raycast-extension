@@ -273,6 +273,7 @@ void main() async {
   }
 
   rebuildMenuCallback = rebuildMenu;
+  globalServer.rebuildMenuCallback = rebuildMenu;
   await rebuildMenu();
 
   // Handle system tray click events natively

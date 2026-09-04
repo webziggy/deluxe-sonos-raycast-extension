@@ -15,6 +15,7 @@ class LocalServer {
   late String _secretToken;
   final Function(String haUrl, String haToken) onConfigUpdate;
   final List<Map<String, dynamic>> trackHistory = [];
+  Future<void> Function()? rebuildMenuCallback;
   List<dynamic> Function()? getDebugStates;
   Map<String, Map<String, String>> Function()? getObservedStations;
 
@@ -209,9 +210,7 @@ class LocalServer {
         await AppConfig.savePinnedSpeaker(speaker);
         
         // Notify the app to rebuild the menu to show the active speaker
-        startRebuildTimer(() async {
-          // You could add a callback here if needed
-        });
+        startRebuildTimer(rebuildMenuCallback);
         
         return Response.ok(jsonEncode({'success': true}));
       } catch (e) {
