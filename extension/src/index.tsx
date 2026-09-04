@@ -33,6 +33,24 @@ export default function Command() {
   useEffect(() => {
     // Sync the initial pinned speaker to the companion app so it knows right away
     syncPinnedSpeakerToCompanion(cache.get("pinnedSpeaker"));
+    Promise.all([
+      LocalStorage.getItem<string>("allowlist"),
+      LocalStorage.getItem<string>("blocklist"),
+    ]).then(([a, b]) => {
+      const aList = a
+        ? a
+            .split("\n")
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
+        : [];
+      const bList = b
+        ? b
+            .split("\n")
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
+        : [];
+      syncFiltersToCompanion(aList, bList);
+    });
   }, []);
   useEffect(() => {
     LocalStorage.getItem<string>("allowlist").then((a) => {
