@@ -6,27 +6,21 @@ import {
   Toast,
   LocalStorage,
 } from "@raycast/api";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { getCompanionHistory, syncFiltersToCompanion } from "./companionClient";
 
 export default function FiltersCommand() {
-  const [allowlist, setAllowlist] = useState<string>("");
-  const [blocklist, setBlocklist] = useState<string>("");
+  const [initialAllowlist, setInitialAllowlist] = useState<string>("");
+  const [initialBlocklist, setInitialBlocklist] = useState<string>("");
   const [history, setHistory] = useState<string>("Loading...");
-
-  const allowlistRef = useRef(allowlist);
-  const blocklistRef = useRef(blocklist);
-  useEffect(() => {
-    allowlistRef.current = allowlist;
-    blocklistRef.current = blocklist;
-  }, [allowlist, blocklist]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       const a = await LocalStorage.getItem<string>("allowlist");
       const b = await LocalStorage.getItem<string>("blocklist");
-      if (a) setAllowlist(a);
-      if (b) setBlocklist(b);
+      if (a) setInitialAllowlist(a);
+      if (b) setInitialBlocklist(b);
 
       const hist = await getCompanionHistory();
       if (hist.length > 0) {
@@ -36,13 +30,14 @@ export default function FiltersCommand() {
       } else {
         setHistory("No recent tracks recorded yet.");
       }
+      setIsLoading(false);
     }
     load();
   }, []);
 
-  async function submit() {
-    const aStr = allowlistRef.current;
-    const bStr = blocklistRef.current;
+  async function submit(values: { allowlist?: string; blocklist?: string }) {
+    const aStr = values.allowlist ?? "";
+    const bStr = values.blocklist ?? "";
 
     const aList = aStr
       .split("\n")
@@ -91,9 +86,10 @@ export default function FiltersCommand() {
 
   return (
     <Form
+      isLoading={isLoading}
       actions={
         <ActionPanel>
-          <Action.SubmitForm title="Save Filters" onSubmit={() => submit()} />
+          <Action.SubmitForm title="Save Filters" onSubmit={submit} />
         </ActionPanel>
       }
     >
@@ -104,15 +100,13 @@ export default function FiltersCommand() {
       <Form.TextArea
         id="allowlist"
         title="Allowlist"
-        value={allowlist}
-        onChange={setAllowlist}
+        defaultValue={initialAllowlist}
         placeholder=".*(My Favorite Song).*$"
       />
       <Form.TextArea
         id="blocklist"
         title="Blocklist"
-        value={blocklist}
-        onChange={setBlocklist}
+        defaultValue={initialBlocklist}
         placeholder=".*on Kitchen Speaker.*$"
       />
 
