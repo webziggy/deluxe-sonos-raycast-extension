@@ -23,6 +23,7 @@ export interface Preferences {
 }
 
 let connectionPromise: Promise<Connection> | null = null;
+let activeBaseUrl = "";
 
 async function resolveActiveUrl(
   localUrl: string | undefined,
@@ -56,8 +57,14 @@ async function resolveActiveUrl(
 }
 
 export async function getActiveHaUrl(): Promise<string> {
+  if (activeBaseUrl) return activeBaseUrl;
   const prefs = getPreferenceValues<Preferences>();
-  return await resolveActiveUrl(prefs.haUrlLocal, prefs.haUrl, prefs.haToken);
+  activeBaseUrl = await resolveActiveUrl(
+    prefs.haUrlLocal,
+    prefs.haUrl,
+    prefs.haToken,
+  );
+  return activeBaseUrl;
 }
 
 export async function getHAConnection(): Promise<Connection> {
@@ -66,12 +73,12 @@ export async function getHAConnection(): Promise<Connection> {
   }
 
   const preferences = getPreferenceValues<Preferences>();
-  const baseUrl = await resolveActiveUrl(
+  activeBaseUrl = await resolveActiveUrl(
     preferences.haUrlLocal,
     preferences.haUrl,
     preferences.haToken,
   );
-  const auth = createLongLivedTokenAuth(baseUrl, preferences.haToken);
+  const auth = createLongLivedTokenAuth(activeBaseUrl, preferences.haToken);
 
   connectionPromise = createConnection({ auth }).catch((err) => {
     connectionPromise = null;
@@ -134,11 +141,9 @@ export function getFullImageUrl(path?: string): string {
   if (!path) return "";
   if (path.startsWith("http")) return path;
   const preferences = getPreferenceValues<Preferences>();
-  const baseUrl = await resolveActiveUrl(
-    preferences.haUrlLocal,
-    preferences.haUrl,
-    preferences.haToken,
-  );
+  // We cannot await here, so we'll just optimistically use the external URL for images if it hasn't been cached,
+  // though typically activeBaseUrl is initialized immediately on boot.
+  const baseUrl = activeBaseUrl || preferences.haUrl.trim().replace(/\/+$/, "");
   return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
