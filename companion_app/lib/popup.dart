@@ -220,7 +220,7 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
               ),
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: textPadding),
+                  padding: EdgeInsets.symmetric(horizontal: textPadding, vertical: 8.0),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
