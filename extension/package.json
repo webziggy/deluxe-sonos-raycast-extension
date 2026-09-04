@@ -52,6 +52,12 @@
       "title": "Sonos Manage Radio Stations",
       "description": "Configure custom badges and iTunes fetcher overrides for live radio streams",
       "mode": "view"
+    },
+    {
+      "name": "backup",
+      "title": "Sonos Backup & Restore",
+      "description": "Export or import your entire Sonos extension configuration",
+      "mode": "view"
     }
   ],
   "preferences": [

@@ -8,6 +8,8 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 type ExtensionPreferences = {
+  /** Enable Debug Commands - Show debug information when running debug commands */
+  "enableDebugCommands": boolean,
   /** Home Assistant URL - The URL of your Home Assistant instance */
   "haUrl": string,
   /** Long-Lived Access Token - Your Home Assistant long-lived access token */
@@ -28,6 +30,16 @@ declare namespace Preferences {
   export type Favourites = ExtensionPreferences & {}
   /** Preferences accessible in the `queue` command */
   export type Queue = ExtensionPreferences & {}
+  /** Preferences accessible in the `filters` command */
+  export type Filters = ExtensionPreferences & {}
+  /** Preferences accessible in the `debug` command */
+  export type Debug = ExtensionPreferences & {}
+  /** Preferences accessible in the `debug-states` command */
+  export type DebugStates = ExtensionPreferences & {}
+  /** Preferences accessible in the `manage-stations` command */
+  export type ManageStations = ExtensionPreferences & {}
+  /** Preferences accessible in the `backup` command */
+  export type Backup = ExtensionPreferences & {}
 }
 
 declare namespace Arguments {
@@ -37,5 +49,15 @@ declare namespace Arguments {
   export type Favourites = {}
   /** Arguments passed to the `queue` command */
   export type Queue = {}
+  /** Arguments passed to the `filters` command */
+  export type Filters = {}
+  /** Arguments passed to the `debug` command */
+  export type Debug = {}
+  /** Arguments passed to the `debug-states` command */
+  export type DebugStates = {}
+  /** Arguments passed to the `manage-stations` command */
+  export type ManageStations = {}
+  /** Arguments passed to the `backup` command */
+  export type Backup = {}
 }
 

@@ -7,12 +7,19 @@ import {
   LocalStorage,
 } from "@raycast/api";
 import { useEffect, useState } from "react";
-import { getCompanionHistory, syncFiltersToCompanion } from "./companionClient";
+import {
+  getCompanionHistory,
+  syncFiltersToCompanion,
+  isCompanionActive,
+} from "./companionClient";
 
 export default function FiltersCommand() {
   const [initialAllowlist, setInitialAllowlist] = useState<string>("");
   const [initialBlocklist, setInitialBlocklist] = useState<string>("");
   const [history, setHistory] = useState<string>("Loading...");
+  const [companionStatus, setCompanionStatus] = useState<string>(
+    "⏳ Checking Companion App status...",
+  );
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -30,6 +37,12 @@ export default function FiltersCommand() {
       } else {
         setHistory("No recent tracks recorded yet.");
       }
+
+      const active = await isCompanionActive();
+      setCompanionStatus(
+        active ? "🟢 Companion App: Running" : "🔴 Companion App: Offline",
+      );
+
       setIsLoading(false);
     }
     load();
@@ -95,6 +108,8 @@ export default function FiltersCommand() {
     >
       {!isLoading && (
         <>
+          <Form.Description title="System Status" text={companionStatus} />
+          <Form.Separator />
           <Form.Description
             title="Regex Rules"
             text="Enter one regular expression per line. If the Allowlist is used, EVERYTHING else is blocked."

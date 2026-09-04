@@ -1,4 +1,10 @@
-import { List, ActionPanel, Action, Icon, getPreferenceValues } from "@raycast/api";
+import {
+  List,
+  ActionPanel,
+  Action,
+  Icon,
+  getPreferenceValues,
+} from "@raycast/api";
 import { useEffect, useState } from "react";
 import { getCompanionDebugStates } from "./companionClient";
 
@@ -7,7 +13,10 @@ export default function Command() {
   if (!prefs.enableDebugCommands) {
     return (
       <List>
-        <List.EmptyView title="Debug Commands Disabled" description="Enable them in the extension preferences." />
+        <List.EmptyView
+          title="Debug Commands Disabled"
+          description="Enable them in the extension preferences."
+        />
       </List>
     );
   }
@@ -34,7 +43,10 @@ export default function Command() {
           accessories={[{ text: "Press Enter to view raw JSON" }]}
           actions={
             <ActionPanel>
-              <Action.Push title="View Raw JSON" target={<StateDetail item={item} />} />
+              <Action.Push
+                title="View Raw JSON"
+                target={<StateDetail item={item} />}
+              />
             </ActionPanel>
           }
         />

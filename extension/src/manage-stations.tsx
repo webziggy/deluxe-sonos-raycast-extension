@@ -13,6 +13,7 @@ import {
   getObservedStations,
   getStationConfig,
   saveStationConfig,
+  isCompanionActive,
 } from "./companionClient";
 import { useSonosPlayers } from "./useSonosPlayers";
 import { fetchFavourites, getFullImageUrl } from "./api";
@@ -24,9 +25,16 @@ export default function Command() {
   >({});
   const [config, setConfig] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [companionStatus, setCompanionStatus] =
+    useState<string>("Checking status...");
 
   useEffect(() => {
     async function load() {
+      const active = await isCompanionActive();
+      setCompanionStatus(
+        active ? "Companion App: Running" : "Companion App: Offline",
+      );
+
       const [obs, conf] = await Promise.all([
         getObservedStations(),
         getStationConfig(),
@@ -59,66 +67,70 @@ export default function Command() {
 
   return (
     <List isLoading={isLoading} searchBarPlaceholder="Search radio stations...">
-      {Object.entries(stations).map(([channelName, sample]) => {
-        const conf = config[channelName];
-        const hasConfig = conf !== undefined;
-        const isSkipped = conf?.skipItunes === true;
-        const hasCustomBadge = !!conf?.badgeUrl;
+      <List.Section title={companionStatus}>
+        {Object.entries(stations).map(([channelName, sample]) => {
+          const conf = config[channelName];
+          const hasConfig = conf !== undefined;
+          const isSkipped = conf?.skipItunes === true;
+          const hasCustomBadge = !!conf?.badgeUrl;
 
-        const accessories: any[] = [];
+          const accessories: any[] = [];
 
-        if (hasConfig) {
-          accessories.push({
-            icon: Icon.CheckCircle,
-            tooltip: "Custom Settings Applied",
-          });
-        } else {
-          accessories.push({
-            icon: Icon.Circle,
-            tooltip: "No Custom Settings",
-          });
-        }
+          if (hasConfig) {
+            accessories.push({
+              icon: Icon.CheckCircle,
+              tooltip: "Custom Settings Applied",
+            });
+          } else {
+            accessories.push({
+              icon: Icon.Circle,
+              tooltip: "No Custom Settings",
+            });
+          }
 
-        if (isSkipped) {
-          accessories.push({
-            icon: Icon.XmarkCircle,
-            tooltip: "iTunes API Bypassed",
-          });
-        }
+          if (isSkipped) {
+            accessories.push({
+              icon: Icon.XmarkCircle,
+              tooltip: "iTunes API Bypassed",
+            });
+          }
 
-        return (
-          <List.Item
-            key={channelName}
-            title={channelName}
-            subtitle={
-              sample.title === "Historical"
-                ? "Saved Configuration"
-                : `Example: ${sample.title} - ${sample.artist}`
-            }
-            icon={
-              hasCustomBadge
-                ? { source: conf.badgeUrl?.replace(/^http:\/\//i, "https://") }
-                : Icon.Signal3
-            }
-            accessories={accessories}
-            actions={
-              <ActionPanel>
-                <Action.Push
-                  title="Configure Station"
-                  icon={Icon.Gear}
-                  target={
-                    <ConfigureStation
-                      channelName={channelName}
-                      currentConfig={conf || {}}
-                      onSaved={refreshConfig}
-                    />
-                  }
-                />
-              </ActionPanel>
-            }
-          />
-        );
-      })}
+          return (
+            <List.Item
+              key={channelName}
+              title={channelName}
+              subtitle={
+                sample.title === "Historical"
+                  ? "Saved Configuration"
+                  : `Example: ${sample.title} - ${sample.artist}`
+              }
+              icon={
+                hasCustomBadge
+                  ? {
+                      source: conf.badgeUrl?.replace(/^http:\/\//i, "https://"),
+                    }
+                  : Icon.Signal3
+              }
+              accessories={accessories}
+              actions={
+                <ActionPanel>
+                  <Action.Push
+                    title="Configure Station"
+                    icon={Icon.Gear}
+                    target={
+                      <ConfigureStation
+                        channelName={channelName}
+                        currentConfig={conf || {}}
+                        onSaved={refreshConfig}
+                      />
+                    }
+                  />
+                </ActionPanel>
+              }
+            />
+          );
+        })}
+      </List.Section>
     </List>
   );
 }
@@ -138,6 +150,8 @@ function ConfigureStation({
     { title: string; items: any[] }[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [companionStatus, setCompanionStatus] =
+    useState<string>("Checking status...");
 
   const [skipItunes, setSkipItunes] = useState(
     currentConfig.skipItunes === true,

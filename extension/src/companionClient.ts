@@ -1,3 +1,4 @@
+import { LocalStorage } from "@raycast/api";
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -177,22 +178,19 @@ export async function getObservedStations(): Promise<
 }
 
 export async function getStationConfig(): Promise<Record<string, any>> {
-  const auth = getAuthDetails();
-  if (!auth) return {};
-  try {
-    const res = await fetch(`http://127.0.0.1:${auth.port}/station_config`, {
-      headers: { Authorization: `Bearer ${auth.token}` },
-    });
-    if (res.ok) {
-      return (await res.json()) as Record<string, any>;
-    }
-  } catch (e) {}
+  const localStr = await LocalStorage.getItem<string>("stationConfig");
+  if (localStr) {
+    try {
+      return JSON.parse(localStr);
+    } catch (e) {}
+  }
   return {};
 }
 
 export async function saveStationConfig(
   config: Record<string, any>,
 ): Promise<void> {
+  await LocalStorage.setItem("stationConfig", JSON.stringify(config));
   const auth = getAuthDetails();
   if (!auth) return;
   try {
@@ -205,7 +203,7 @@ export async function saveStationConfig(
       body: JSON.stringify(config),
     });
   } catch (e) {
-    console.error("Failed to save station config", e);
+    console.error("Failed to save station config to companion", e);
   }
 }
 

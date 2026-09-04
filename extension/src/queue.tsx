@@ -1,4 +1,12 @@
-import { List, ActionPanel, Action, Icon, openCommandPreferences, Cache, LaunchProps } from "@raycast/api";
+import {
+  List,
+  ActionPanel,
+  Action,
+  Icon,
+  openCommandPreferences,
+  Cache,
+  LaunchProps,
+} from "@raycast/api";
 import { useEffect, useState } from "react";
 import { callService, fetchQueue, getFullImageUrl } from "./api";
 import { useSonosPlayers } from "./useSonosPlayers";
@@ -12,17 +20,29 @@ interface QueueItem {
   entity_picture: string;
 }
 
-export default function Command(props: LaunchProps<{ launchContext?: { entityId?: string } }>) {
-  const { players: sonosPlayers, isLoading: playersLoading, error } = useSonosPlayers();
-  
+export default function Command(
+  props: LaunchProps<{ launchContext?: { entityId?: string } }>,
+) {
+  const {
+    players: sonosPlayers,
+    isLoading: playersLoading,
+    error,
+  } = useSonosPlayers();
+
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [queueLoading, setQueueLoading] = useState(false);
-  const [selectedSpeaker, setSelectedSpeaker] = useState<string>(props.launchContext?.entityId || "");
+  const [selectedSpeaker, setSelectedSpeaker] = useState<string>(
+    props.launchContext?.entityId || "",
+  );
 
   useEffect(() => {
     if (!selectedSpeaker && sonosPlayers.length > 0) {
-      const pinned = cache.get("pinnedSpeaker"); 
-      setSelectedSpeaker(pinned && sonosPlayers.find(p => p.entity_id === pinned) ? pinned : sonosPlayers[0].entity_id);
+      const pinned = cache.get("pinnedSpeaker");
+      setSelectedSpeaker(
+        pinned && sonosPlayers.find((p) => p.entity_id === pinned)
+          ? pinned
+          : sonosPlayers[0].entity_id,
+      );
     }
   }, [sonosPlayers, selectedSpeaker]);
 
@@ -36,8 +56,11 @@ export default function Command(props: LaunchProps<{ launchContext?: { entityId?
           if (Array.isArray(res)) {
             items = res;
           } else if (res?.response) {
-            items = res.response[selectedSpeaker] || Object.values(res.response)[0] || [];
-          } else if (res && typeof res === 'object') {
+            items =
+              res.response[selectedSpeaker] ||
+              Object.values(res.response)[0] ||
+              [];
+          } else if (res && typeof res === "object") {
             items = res[selectedSpeaker] || Object.values(res)[0] || [];
           }
           setQueue(Array.isArray(items) ? items : []);
@@ -51,39 +74,60 @@ export default function Command(props: LaunchProps<{ launchContext?: { entityId?
   }, [selectedSpeaker]);
 
   if (error) {
-    return <List><List.EmptyView title="Connection Error" description={error} icon={Icon.Warning} /></List>;
+    return (
+      <List>
+        <List.EmptyView
+          title="Connection Error"
+          description={error}
+          icon={Icon.Warning}
+        />
+      </List>
+    );
   }
 
   const handlePlayQueueItem = async (index: number) => {
     if (!selectedSpeaker) return;
-    await callService("sonos", "play_queue", { entity_id: selectedSpeaker, queue_position: index });
+    await callService("sonos", "play_queue", {
+      entity_id: selectedSpeaker,
+      queue_position: index,
+    });
   };
 
   const handleRemoveQueueItem = async (index: number) => {
     if (!selectedSpeaker) return;
-    await callService("sonos", "remove_from_queue", { entity_id: selectedSpeaker, queue_position: index });
-    setQueue(q => q.filter((_, i) => i !== index));
+    await callService("sonos", "remove_from_queue", {
+      entity_id: selectedSpeaker,
+      queue_position: index,
+    });
+    setQueue((q) => q.filter((_, i) => i !== index));
   };
 
   const handleClearQueue = async () => {
     if (!selectedSpeaker) return;
-    await callService("media_player", "clear_playlist", { entity_id: selectedSpeaker });
+    await callService("media_player", "clear_playlist", {
+      entity_id: selectedSpeaker,
+    });
     setQueue([]);
   };
 
   return (
-    <List 
-      isLoading={playersLoading || queueLoading} 
+    <List
+      isLoading={playersLoading || queueLoading}
       searchBarAccessory={
         sonosPlayers.length > 0 ? (
-          <List.Dropdown tooltip="Select Speaker" value={selectedSpeaker} onChange={setSelectedSpeaker}>
-            {sonosPlayers.map(p => {
-              const isOffline = p.state === "unavailable" || p.state === "unknown";
+          <List.Dropdown
+            tooltip="Select Speaker"
+            value={selectedSpeaker}
+            onChange={setSelectedSpeaker}
+          >
+            {sonosPlayers.map((p) => {
+              const isOffline =
+                p.state === "unavailable" || p.state === "unknown";
               return (
-                <List.Dropdown.Item 
-                  key={p.entity_id} 
-                  title={`${p.groupName}${isOffline ? ' (Offline)' : ''}`} 
-                  value={p.entity_id} 
+                <List.Dropdown.Item
+                  key={p.entity_id}
+                  title={`${p.groupName}${isOffline ? " (Offline)" : ""}`}
+                  value={p.entity_id}
                 />
               );
             })}
@@ -92,9 +136,13 @@ export default function Command(props: LaunchProps<{ launchContext?: { entityId?
       }
     >
       {queue.length === 0 && !queueLoading && (
-        <List.EmptyView title="Queue is empty" description="No tracks are currently queued on this speaker." icon={Icon.List} />
+        <List.EmptyView
+          title="Queue is empty"
+          description="No tracks are currently queued on this speaker."
+          icon={Icon.List}
+        />
       )}
-      
+
       {queue.map((item, index) => (
         <List.Item
           key={`${item.media_title}-${index}`}
@@ -103,15 +151,38 @@ export default function Command(props: LaunchProps<{ launchContext?: { entityId?
           accessories={[{ text: item.media_album_name }]}
           detail={
             item.entity_picture ? (
-              <List.Item.Detail markdown={`<img src="${getFullImageUrl(item.entity_picture)}" height="200" />`} />
+              <List.Item.Detail
+                markdown={`<img src="${getFullImageUrl(item.entity_picture)}" height="200" />`}
+              />
             ) : undefined
           }
           actions={
             <ActionPanel>
-              <Action title="Play Now" icon={Icon.Play} onAction={() => handlePlayQueueItem(index)} />
-              <Action title="Remove from Queue" icon={Icon.Trash} style={Action.Style.Destructive} shortcut={{ modifiers: ["cmd"], key: "backspace" }} onAction={() => handleRemoveQueueItem(index)} />
-              <Action title="Clear Entire Queue" icon={Icon.ExclamationMark} style={Action.Style.Destructive} shortcut={{ modifiers: ["cmd", "shift"], key: "backspace" }} onAction={() => handleClearQueue()} />
-              <Action title="Open Preferences" icon={Icon.Gear} onAction={openCommandPreferences} shortcut={{ modifiers: ["cmd"], key: "," }} />
+              <Action
+                title="Play Now"
+                icon={Icon.Play}
+                onAction={() => handlePlayQueueItem(index)}
+              />
+              <Action
+                title="Remove from Queue"
+                icon={Icon.Trash}
+                style={Action.Style.Destructive}
+                shortcut={{ modifiers: ["cmd"], key: "backspace" }}
+                onAction={() => handleRemoveQueueItem(index)}
+              />
+              <Action
+                title="Clear Entire Queue"
+                icon={Icon.ExclamationMark}
+                style={Action.Style.Destructive}
+                shortcut={{ modifiers: ["cmd", "shift"], key: "backspace" }}
+                onAction={() => handleClearQueue()}
+              />
+              <Action
+                title="Open Preferences"
+                icon={Icon.Gear}
+                onAction={openCommandPreferences}
+                shortcut={{ modifiers: ["cmd"], key: "," }}
+              />
             </ActionPanel>
           }
         />

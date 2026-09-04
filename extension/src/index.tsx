@@ -39,7 +39,8 @@ export default function Command() {
     Promise.all([
       LocalStorage.getItem<string>("allowlist"),
       LocalStorage.getItem<string>("blocklist"),
-    ]).then(([a, b]) => {
+      LocalStorage.getItem<string>("stationConfig"),
+    ]).then(([a, b, cStr]) => {
       const aList = a
         ? a
             .split("\n")
@@ -53,6 +54,13 @@ export default function Command() {
             .filter((s) => s.length > 0)
         : [];
       syncFiltersToCompanion(aList, bList);
+
+      if (cStr) {
+        try {
+          const configObj = JSON.parse(cStr);
+          saveStationConfig(configObj);
+        } catch (e) {}
+      }
     });
   }, []);
   useEffect(() => {
