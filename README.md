@@ -46,6 +46,22 @@ Since this extension is currently in private beta and not yet published to the p
    - **Home Assistant URL**: The local or external URL to your HA instance (e.g., `http://homeassistant.local:8123` or your Nabu Casa URL).
    - **Long-Lived Access Token**: Generate this in Home Assistant by clicking your Profile in the bottom left -> Security -> Long-Lived Access Tokens.
 
+
+## Local vs External URL (and the macOS ATS Restriction)
+
+The extension allows you to configure two URLs in the preferences:
+- **Local URL (Optional):** e.g., `http://homeassistant.local:8123`
+- **External URL (Required):** e.g., `https://xxxx.ui.nabu.casa`
+
+For maximum speed, if a Local URL is provided, the extension will instantly ping it on boot. If it's reachable, it will route all WebSocket and API traffic securely over your local network for 0ms latency. If it fails (e.g., you leave the house), it seamlessly falls back to the External URL.
+
+**Why is an External URL required?** 
+While `http://` works flawlessly for raw API traffic, Apple enforces strict **App Transport Security (ATS)** rules on native macOS UI elements. This means Raycast will silently refuse to render Album Artwork served over an insecure `http://` connection! 
+
+To solve this, the extension is intentionally designed to hijack image requests and route them through your External `https://` URL (if your local URL isn't already `https://`), satisfying Apple's security requirements while keeping your core control traffic blisteringly fast on the local network. 
+
+*(Note: If you do not have an External URL and only provide a local HTTP address, the extension and Companion App will still work perfectly—you just won't see Album Artwork in Raycast!)*
+
 ## Strict Filtering (Optional)
 By default, the extension uses an intelligent heuristic (looking for \`group_members\`) to automatically filter out non-Sonos media players like Apple TVs. If an unwanted device slips through, open the Extension Preferences (\`Cmd + ,\`) and enter a comma-separated list of your exact Sonos Entity IDs into the **Include Only These Entities** field.
 
