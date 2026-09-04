@@ -199,7 +199,7 @@ void main() async {
     final config = await AppConfig.loadConfig();
     final isPaused = config?['notificationsEnabled'] == false;
     final pinnedSpeaker = config?['pinnedSpeaker'] as String?;
-    final activeSpeaker = pinnedSpeaker != null ? pinnedSpeaker.split('.').last : 'All Speakers';
+    final activeSpeaker = (pinnedSpeaker != null && pinnedSpeaker.isNotEmpty) ? pinnedSpeaker.split('.').last : 'All Speakers';
     
     List<MenuItemBase> menuItems = [
       MenuItemLabel(label: 'Active Speaker: $activeSpeaker', enabled: false),

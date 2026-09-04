@@ -31,6 +31,10 @@ export default function Command() {
   const [blocklist, setBlocklist] = useState<string[]>([]);
 
   useEffect(() => {
+    // Sync the initial pinned speaker to the companion app so it knows right away
+    syncPinnedSpeakerToCompanion(cache.get("pinnedSpeaker"));
+  }, []);
+  useEffect(() => {
     LocalStorage.getItem<string>("allowlist").then((a) => {
       if (a)
         setAllowlist(
