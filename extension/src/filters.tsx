@@ -33,9 +33,11 @@ export default function FiltersCommand() {
     load();
   }, []);
 
-  async function submit(values: { allowlist?: string; blocklist?: string }) {
-    const aStr = values.allowlist ?? "";
-    const bStr = values.blocklist ?? "";
+  async function submit(values: any) {
+    // Raycast sometimes omits fully controlled components from the 'values' payload.
+    // We fall back to the React state variables to guarantee we have the exact text.
+    const aStr = values.allowlist ?? allowlist ?? "";
+    const bStr = values.blocklist ?? blocklist ?? "";
 
     const aList = aStr
       .split("\n")
