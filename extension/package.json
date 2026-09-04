@@ -5,7 +5,7 @@
   "description": "Control your Sonos system via Home Assistant",
   "icon": "command-icon.png",
   "author": "alano",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "categories": [
     "Media"
   ],
