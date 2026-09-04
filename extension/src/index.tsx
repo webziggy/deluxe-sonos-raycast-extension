@@ -1,4 +1,7 @@
-import { syncPinnedSpeakerToCompanion } from "./companionClient";
+import {
+  syncPinnedSpeakerToCompanion,
+  syncFiltersToCompanion,
+} from "./companionClient";
 import {
   MenuBarExtra,
   openCommandPreferences,
