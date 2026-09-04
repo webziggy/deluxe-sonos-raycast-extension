@@ -1,3 +1,4 @@
+import { syncPinnedSpeakerToCompanion } from "./companionClient";
 import {
   MenuBarExtra,
   openCommandPreferences,
