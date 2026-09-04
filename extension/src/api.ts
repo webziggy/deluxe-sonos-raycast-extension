@@ -142,11 +142,19 @@ export function getFullImageUrl(path?: string): string {
   if (path.startsWith("http")) return path;
   
   const preferences = getPreferenceValues<Preferences>();
-  // ALWAYS use the external haUrl for images to satisfy macOS App Transport Security (ATS).
-  // Raycast's native UI elements will silently refuse to render images served over http://.
-  const baseUrl = preferences.haUrl.trim().replace(/\/+$/, "");
+  const externalUrl = preferences.haUrl.trim().replace(/\/+$/, "");
   
-  return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+  // Start with the dynamically resolved active URL (which is proven to be reachable)
+  let baseUrlToUse = activeBaseUrl || externalUrl;
+  
+  // If the active URL is insecure (http), but the external URL is secure (https),
+  // we must route the image request through the secure external URL. 
+  // This prevents macOS App Transport Security (ATS) from silently blocking the image render.
+  if (baseUrlToUse.startsWith("http://") && externalUrl.startsWith("https://")) {
+    baseUrlToUse = externalUrl;
+  }
+  
+  return `${baseUrlToUse}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
 export function filterSonosPlayers(entities: HassEntities) {
