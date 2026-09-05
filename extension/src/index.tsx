@@ -1,3 +1,4 @@
+import { useCachedState } from "@raycast/utils";
 import {
   syncPinnedSpeakerToCompanion,
   syncFiltersToCompanion,
@@ -33,14 +34,7 @@ export default function Command() {
 
   const [allowlist, setAllowlist] = useState<string[]>([]);
   const [blocklist, setBlocklist] = useState<string[]>([]);
-  const [structuredFavourites, setStructuredFavourites] = useState<{ title: string; items: any[] }[]>(() => {
-    const cached = cache.get("favourites");
-    try {
-      return cached ? JSON.parse(cached) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [structuredFavourites, setStructuredFavourites] = useCachedState<{ title: string; items: any[] }[]>("favourites", []);
 
   useEffect(() => {
     // Sync the initial pinned speaker to the companion app so it knows right away
@@ -643,7 +637,7 @@ export default function Command() {
         <MenuBarExtra.Section>
           {structuredFavourites.length > 0 ? (
             <MenuBarExtra.Submenu title="Favourites" icon={Icon.Star}>
-              {structuredFavourites.map((section) => (
+              {structuredFavourites.map((section: any) => (
                 <MenuBarExtra.Submenu key={section.title} title={section.title}>
                   {section.items.map((fav: any, index: number) => (
                     <MenuBarExtra.Item
