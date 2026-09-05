@@ -212,29 +212,42 @@ class HAWebSocket {
             if (!skipItunes) {
               try {
                 String cleanQuery = itunesQuery.replaceAll(' - ', ' ').replaceAll(RegExp(r'\s+'), ' ');
+                String originalItunesQuery = itunesQuery; // Keep it for the logger
                 
-                // If a specific parse style is set and a hyphen exists, we can extract the exact parts
-                if (parseStyle != null && parseStyle != 'auto' && itunesQuery.contains(' - ')) {
-                  final parts = itunesQuery.split(' - ');
-                  if (parts.length >= 2) {
-                    final part1 = parts[0].trim();
-                    final part2 = parts.sublist(1).join(' - ').trim(); // In case there are multiple hyphens
-                    
-                    String parsedArtist = '';
-                    String parsedTitle = '';
-                    
+                if (parseStyle != null && parseStyle != 'auto') {
+                  String parsedArtist = '';
+                  String parsedTitle = '';
+                  
+                  // Case 1: HA already separated them into mediaTitle and mediaArtist, but they might be backward
+                  if (mediaTitle != null && mediaTitle.isNotEmpty && mediaArtist != null && mediaArtist.isNotEmpty && !itunesQuery.contains(' - ')) {
                     if (parseStyle == 'artist_title') {
-                      parsedArtist = part1;
-                      parsedTitle = part2;
+                      parsedArtist = mediaArtist;
+                      parsedTitle = mediaTitle;
                     } else if (parseStyle == 'title_artist') {
-                      parsedTitle = part1;
-                      parsedArtist = part2;
+                      parsedTitle = mediaArtist; // They are swapped!
+                      parsedArtist = mediaTitle; // They are swapped!
                     }
-                    
-                    // Rebuild the query cleanly for iTunes
+                  } 
+                  // Case 2: The hyphen is still intact inside the query string
+                  else if (itunesQuery.contains(' - ')) {
+                    final parts = itunesQuery.split(' - ');
+                    if (parts.length >= 2) {
+                      final part1 = parts[0].trim();
+                      final part2 = parts.sublist(1).join(' - ').trim();
+                      
+                      if (parseStyle == 'artist_title') {
+                        parsedArtist = part1;
+                        parsedTitle = part2;
+                      } else if (parseStyle == 'title_artist') {
+                        parsedTitle = part1;
+                        parsedArtist = part2;
+                      }
+                    }
+                  }
+                  
+                  // If we successfully extracted/swapped them, rebuild everything
+                  if (parsedTitle.isNotEmpty || parsedArtist.isNotEmpty) {
                     cleanQuery = "$parsedTitle $parsedArtist".replaceAll(RegExp(r'\s+'), ' ');
-                    
-                    // AND we can beautifully format the track string for the notification itself!
                     trackString = "$parsedTitle - $parsedArtist";
                   }
                 }
@@ -247,7 +260,7 @@ class HAWebSocket {
                   final logFile = File('${Platform.environment['HOME']}/.sonos_companion_itunes.log');
                   logFile.writeAsStringSync(
                     '\n[${DateTime.now().toIso8601String()}] Channel: $channelName\n'
-                    '  Original String : $itunesQuery\n'
+                    '  Original String : $originalItunesQuery\n'
                     '  Clean Query     : $cleanQuery\n'
                     '  Notification UI : $trackString\n'
                     '  iTunes API URL  : $url\n', 
