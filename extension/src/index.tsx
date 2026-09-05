@@ -893,6 +893,7 @@ export default function Command() {
     );
   }
 
+  try {
   return (
     <MenuBarExtra icon={Icon.Music} isLoading={isLoading}>
       {allPlayers.length === 0 && !isLoading && (
@@ -926,4 +927,5 @@ export default function Command() {
       </MenuBarExtra.Section>
     </MenuBarExtra>
   );
+  } catch(err: any) { return <MenuBarExtra title={`CRASH: ${err.message}`} /> }
 }
