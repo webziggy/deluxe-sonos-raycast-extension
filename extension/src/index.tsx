@@ -33,7 +33,9 @@ export default function Command() {
 
   const [allowlist, setAllowlist] = useState<string[]>([]);
   const [blocklist, setBlocklist] = useState<string[]>([]);
-  const [structuredFavourites, setStructuredFavourites] = useState<{ title: string; items: any[] }[]>([]);
+  const [structuredFavourites, setStructuredFavourites] = useState<
+    { title: string; items: any[] }[]
+  >([]);
   useEffect(() => {
     const interval = setInterval(() => {
       try {
@@ -184,13 +186,15 @@ export default function Command() {
     })(),
   );
 
-  const [lastFavourites, setLastFavourites] = useState<Record<string, string>>(() => {
-    try {
-      return JSON.parse(cache.get("lastFavourites") || "{}");
-    } catch (e) {
-      return {};
-    }
-  });
+  const [lastFavourites, setLastFavourites] = useState<Record<string, string>>(
+    () => {
+      try {
+        return JSON.parse(cache.get("lastFavourites") || "{}");
+      } catch (e) {
+        return {};
+      }
+    },
+  );
 
   const lastFavouritesRef = useRef<Record<string, string>>(lastFavourites);
 
@@ -238,17 +242,17 @@ export default function Command() {
       const source = player.attributes?.source;
       const channel = player.attributes?.media_channel;
       const favouriteString = source || channel;
-      
+
       if (
         favouriteString &&
         favouriteString !== lastFavouritesRef.current[player.entity_id]
       ) {
-         setLastFavourites((prev) => {
-            const nextState = { ...prev, [player.entity_id]: favouriteString };
-            cache.set("lastFavourites", JSON.stringify(nextState));
-            return nextState;
-         });
-         lastFavouritesRef.current[player.entity_id] = favouriteString;
+        setLastFavourites((prev) => {
+          const nextState = { ...prev, [player.entity_id]: favouriteString };
+          cache.set("lastFavourites", JSON.stringify(nextState));
+          return nextState;
+        });
+        lastFavouritesRef.current[player.entity_id] = favouriteString;
       }
     }
 
@@ -408,16 +412,20 @@ export default function Command() {
     const transparentIcon =
       "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 
-    const activeFavourite = player.attributes?.source || player.attributes?.media_channel;
-    
+    const activeFavourite =
+      player.attributes?.source || player.attributes?.media_channel;
+
     const content = (
       <>
         {isRoot && <MenuBarExtra.Item title={title} icon={Icon.Speaker} />}
-        
-        {(state === "playing" || state === "paused") && activeFavourite && activeFavourite !== mediaTitle && activeFavourite !== mediaArtist && (
+
+        {(state === "playing" || state === "paused") &&
+          activeFavourite &&
+          activeFavourite !== mediaTitle &&
+          activeFavourite !== mediaArtist && (
             <MenuBarExtra.Item title={`\u2800${activeFavourite}`} />
-        )}
-        
+          )}
+
         {nowPlayingLines.map((line, index) => (
           <MenuBarExtra.Item
             key={`nowPlaying-${index}`}
@@ -426,7 +434,9 @@ export default function Command() {
               isRoot ? (index === 0 ? stateIcon : transparentIcon) : undefined
             }
             onAction={
-              fullNowPlaying !== "Idle" && fullNowPlaying !== "Offline" && fullNowPlaying !== "Nothing playing"
+              fullNowPlaying !== "Idle" &&
+              fullNowPlaying !== "Offline" &&
+              fullNowPlaying !== "Nothing playing"
                 ? () =>
                     open(
                       `https://www.google.com/search?q=${encodeURIComponent(fullNowPlaying)}`,
@@ -434,22 +444,25 @@ export default function Command() {
                 : undefined
             }
           />
-        ))}        
+        ))}
         {!isRoot && <MenuBarExtra.Item title={`State: ${state}`} />}
 
         <MenuBarExtra.Section title="Controls">
-          {(fullNowPlaying === "Idle" || fullNowPlaying === "Nothing playing" || state === "paused") && lastFavourites[player.entity_id] && (
-            <MenuBarExtra.Item
-              title={`Play Last: ${lastFavourites[player.entity_id]}`}
-              icon={Icon.Play}
-              onAction={async () => {
-                await callService("media_player", "select_source", {
-                  entity_id: player.entity_id,
-                  source: lastFavourites[player.entity_id],
-                });
-              }}
-            />
-          )}
+          {(fullNowPlaying === "Idle" ||
+            fullNowPlaying === "Nothing playing" ||
+            state === "paused") &&
+            lastFavourites[player.entity_id] && (
+              <MenuBarExtra.Item
+                title={`Play Last: ${lastFavourites[player.entity_id]}`}
+                icon={Icon.Play}
+                onAction={async () => {
+                  await callService("media_player", "select_source", {
+                    entity_id: player.entity_id,
+                    source: lastFavourites[player.entity_id],
+                  });
+                }}
+              />
+            )}
           <MenuBarExtra.Item
             title={state === "playing" ? "Pause" : "Play"}
             icon={state === "playing" ? Icon.Pause : Icon.Play}
@@ -646,17 +659,28 @@ export default function Command() {
         )}
 
         <MenuBarExtra.Section>
-          {(Array.isArray(structuredFavourites) ? structuredFavourites : []).length > 0 ? (
+          {(Array.isArray(structuredFavourites) ? structuredFavourites : [])
+            .length > 0 ? (
             <MenuBarExtra.Submenu title="Favourites" icon={Icon.Star}>
-              {(Array.isArray(structuredFavourites) ? structuredFavourites : []).map((section: any) => (
-                <MenuBarExtra.Submenu key={section.title} title={section.title || "Unknown"}>
-                  {(Array.isArray(section.items) ? section.items : []).map((fav: any, index: number) => (
-                    <MenuBarExtra.Item
-                      key={`${fav.media_content_id || fav.title}-${index}`}
-                      title={fav.title || "Unknown"}
-                      onAction={() => handleSelectSource(player.entity_id, fav.title)}
-                    />
-                  ))}
+              {(Array.isArray(structuredFavourites)
+                ? structuredFavourites
+                : []
+              ).map((section: any) => (
+                <MenuBarExtra.Submenu
+                  key={section.title}
+                  title={section.title || "Unknown"}
+                >
+                  {(Array.isArray(section.items) ? section.items : []).map(
+                    (fav: any, index: number) => (
+                      <MenuBarExtra.Item
+                        key={`${fav.media_content_id || fav.title}-${index}`}
+                        title={fav.title || "Unknown"}
+                        onAction={() =>
+                          handleSelectSource(player.entity_id, fav.title)
+                        }
+                      />
+                    ),
+                  )}
                 </MenuBarExtra.Submenu>
               ))}
             </MenuBarExtra.Submenu>
@@ -894,38 +918,40 @@ export default function Command() {
   }
 
   try {
-  return (
-    <MenuBarExtra icon={Icon.Music} isLoading={isLoading}>
-      {allPlayers.length === 0 && !isLoading && (
-        <MenuBarExtra.Item title="No Sonos players found" />
-      )}
+    return (
+      <MenuBarExtra icon={Icon.Music} isLoading={isLoading}>
+        {allPlayers.length === 0 && !isLoading && (
+          <MenuBarExtra.Item title="No Sonos players found" />
+        )}
 
-      {defaultPlayer && (
+        {defaultPlayer && (
+          <MenuBarExtra.Section>
+            {renderPlayerControls(defaultPlayer, true)}
+          </MenuBarExtra.Section>
+        )}
+
+        {otherPlayers.length > 0 && (
+          <MenuBarExtra.Section
+            title={defaultPlayer ? "Other Speakers" : "Speakers"}
+          >
+            {otherPlayers.map((p) => renderPlayerControls(p, false))}
+          </MenuBarExtra.Section>
+        )}
+
         <MenuBarExtra.Section>
-          {renderPlayerControls(defaultPlayer, true)}
+          <MenuBarExtra.Item
+            title={`Companion App: ${companionActive ? "Connected" : "Disconnected"}`}
+            icon={companionActive ? Icon.CheckCircle : Icon.XMarkCircle}
+          />
+          <MenuBarExtra.Item
+            title="Preferences..."
+            onAction={openCommandPreferences}
+            shortcut={{ modifiers: ["cmd"], key: "," }}
+          />
         </MenuBarExtra.Section>
-      )}
-
-      {otherPlayers.length > 0 && (
-        <MenuBarExtra.Section
-          title={defaultPlayer ? "Other Speakers" : "Speakers"}
-        >
-          {otherPlayers.map((p) => renderPlayerControls(p, false))}
-        </MenuBarExtra.Section>
-      )}
-
-      <MenuBarExtra.Section>
-        <MenuBarExtra.Item
-          title={`Companion App: ${companionActive ? "Connected" : "Disconnected"}`}
-          icon={companionActive ? Icon.CheckCircle : Icon.XMarkCircle}
-        />
-        <MenuBarExtra.Item
-          title="Preferences..."
-          onAction={openCommandPreferences}
-          shortcut={{ modifiers: ["cmd"], key: "," }}
-        />
-      </MenuBarExtra.Section>
-    </MenuBarExtra>
-  );
-  } catch(err: any) { return <MenuBarExtra title={`CRASH: ${err.message}`} /> }
+      </MenuBarExtra>
+    );
+  } catch (err: any) {
+    return <MenuBarExtra title={`CRASH: ${err.message}`} />;
+  }
 }

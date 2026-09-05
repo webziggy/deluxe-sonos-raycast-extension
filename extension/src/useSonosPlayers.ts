@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Cache, getPreferenceValues } from "@raycast/api";
-import { getHAConnection, filterSonosPlayers, getGroupedPlayers, getActiveHaUrl } from "./api";
+import {
+  getHAConnection,
+  filterSonosPlayers,
+  getGroupedPlayers,
+  getActiveHaUrl,
+} from "./api";
 import { subscribeEntities } from "home-assistant-js-websocket";
 import { isCompanionActive, notifyCompanion } from "./companionClient";
 

@@ -10,7 +10,9 @@
 type ExtensionPreferences = {
   /** Enable Debug Commands - Show debug information when running debug commands */
   "enableDebugCommands": boolean,
-  /** Home Assistant URL - The URL of your Home Assistant instance */
+  /** Local Home Assistant URL - Optional. If provided, the extension will attempt to connect here first before falling back to the external URL. */
+  "haUrlLocal"?: string,
+  /** External Home Assistant URL - The external URL of your Home Assistant instance (e.g. Nabu Casa) */
   "haUrl": string,
   /** Long-Lived Access Token - Your Home Assistant long-lived access token */
   "haToken": string,

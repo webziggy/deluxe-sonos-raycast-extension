@@ -61,9 +61,7 @@ export async function notifyCompanion(payload: any): Promise<void> {
       },
       body: JSON.stringify(payload),
     });
-  } catch (e) {
-    
-  }
+  } catch (e) {}
 }
 
 export async function sendConfigToCompanion(
@@ -82,9 +80,7 @@ export async function sendConfigToCompanion(
       },
       body: JSON.stringify({ haUrl, haToken }),
     });
-  } catch (e) {
-    
-  }
+  } catch (e) {}
 }
 
 export async function getCompanionSleepTimer(
@@ -105,9 +101,7 @@ export async function getCompanionSleepTimer(
       const data = await res.json();
       return data.remaining || null; // e.g. "00:15:00"
     }
-  } catch (e) {
-    
-  }
+  } catch (e) {}
   return null;
 }
 
@@ -141,9 +135,7 @@ export async function syncFiltersToCompanion(
       },
       body: JSON.stringify({ allowlist, blocklist }),
     });
-  } catch (e) {
-    
-  }
+  } catch (e) {}
 }
 
 export async function getCompanionDebugStates(): Promise<any[]> {
@@ -202,9 +194,7 @@ export async function saveStationConfig(
       },
       body: JSON.stringify(config),
     });
-  } catch (e) {
-    
-  }
+  } catch (e) {}
 }
 
 export async function syncPinnedSpeakerToCompanion(

@@ -26,8 +26,11 @@ export default function Command(
     { title: string; items: any[] }[]
   >(() => {
     const cached = cache.get("favourites");
-    try { return cached ? JSON.parse(cached) : []; }
-    catch { return []; }
+    try {
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
   });
   const [favsLoading, setFavsLoading] = useState(false);
 
@@ -92,7 +95,7 @@ export default function Command(
 
           setFavourites(newSections);
           cache.set("favourites", JSON.stringify(newSections));
-          
+
           setFavsLoading(false);
         })
         .catch((err) => {
@@ -154,44 +157,48 @@ export default function Command(
         ) : null
       }
     >
-      {(Array.isArray(favourites) ? favourites : []).length === 0 && !isLoading && !favsLoading && (
-        <Grid.EmptyView
-          title={`No ${getSpelling("Favourites")} Found`}
-          description={`Add Sonos ${getSpelling("favourites")} in the Sonos app or Home Assistant.`}
-          icon={Icon.StarDisabled}
-        />
-      )}
+      {(Array.isArray(favourites) ? favourites : []).length === 0 &&
+        !isLoading &&
+        !favsLoading && (
+          <Grid.EmptyView
+            title={`No ${getSpelling("Favourites")} Found`}
+            description={`Add Sonos ${getSpelling("favourites")} in the Sonos app or Home Assistant.`}
+            icon={Icon.StarDisabled}
+          />
+        )}
 
       {favourites.map((section: any) => (
         <Grid.Section key={section.title} title={section.title}>
-          {(Array.isArray(section.items) ? section.items : []).map((fav: any, index: number) => {
-            const isPlaying = fav.title === currentSource;
-            const imageUrl = getFullImageUrl(fav.thumbnail);
+          {(Array.isArray(section.items) ? section.items : []).map(
+            (fav: any, index: number) => {
+              const isPlaying = fav.title === currentSource;
+              const imageUrl = getFullImageUrl(fav.thumbnail);
 
-            return (
-              <Grid.Item
-                key={`${fav.media_content_id}-${index}`}
-                title={fav.title}
-                subtitle={isPlaying ? "Playing..." : undefined}
-                content={imageUrl ? { source: imageUrl } : Icon.Star}
-                actions={
-                  <ActionPanel>
-                    <Action
-                      title={`Play ${getSpelling("Favourite")}`}
-                      icon={Icon.Play}
-                      onAction={() => handlePlayFavourite(fav.title)}
-                    />
-                    <Action
-                      title="Open Preferences"
-                      icon={Icon.Gear}
-                      onAction={openCommandPreferences}
-                      shortcut={{ modifiers: ["cmd"], key: "," }}
-                    />
-                  </ActionPanel>
-                }
-              />
-            );
-          })}
+              return (
+                <Grid.Item
+                  key={`${fav.media_content_id}-${index}`}
+                  title={fav.title}
+                  subtitle={isPlaying ? "Playing..." : undefined}
+                  content={imageUrl ? { source: imageUrl } : Icon.Star}
+                  actions={
+                    <ActionPanel>
+                      <Action
+                        title={`Play ${getSpelling("Favourite")}`}
+                        icon={Icon.Play}
+                        onAction={() => handlePlayFavourite(fav.title)}
+                      />
+                      <Action
+                        title="Open Preferences"
+                        icon={Icon.Gear}
+                        onAction={openCommandPreferences}
+                        shortcut={{ modifiers: ["cmd"], key: "," }}
+                      />
+                    </ActionPanel>
+                  }
+                />
+              );
+            },
+          )}
         </Grid.Section>
       ))}
     </Grid>
