@@ -87,7 +87,7 @@ The repository also includes a standalone Flutter desktop app (`companion_app/`)
 - **🔔 Real-time Track Notifications**: Native, beautiful desktop popups when a new song starts playing.
 - **🖼️ iTunes API Fallback**: Automatically upgrades low-res radio station art to high-res Apple Music album art, while rendering the station logo as a gorgeous badge.
 - **🛡️ Regex Blocklists**: Filter out annoying notification spam (like "Sponsored by..." or "News at 10") by configuring Regex allowlists/blocklists via the `Sonos Notification Filters` Raycast command.
-- **📻 Radio Station Manager**: Fully customize the metadata and artwork of your live radio streams using the `Sonos Manage Radio Stations` command. Bind streams to a known Sonos Favourite, upload a custom badge image, or explicitly override the Artist/Track fields to fix stations that broadcast them backward!
+- **📻 Radio Station Manager**: Fully customize the metadata and artwork of your live radio streams using the `Sonos Manage Radio Stations` command. Bind streams to a known Sonos Favourite, upload a custom badge image, or use the advanced **iTunes Parsing Mode** to instantly fix backward stations that broadcast as `[Song] - [Artist]`!
 - **💾 Backup & Restore**: Instantly export your entire custom configuration (Regex filters and Radio Station metadata) to a single JSON payload using the `Sonos Backup & Restore` command, allowing you to easily transfer your setup between Macs.
 - **🌐 Locale Aware**: Automatically detects your macOS region to display localized spelling (e.g., *Favourites* vs *Favorites*) across the entire UI.
 - **🌓 Dynamic Icons**: Custom SVGs automatically invert perfectly between Light and Dark mode across the Raycast UI and the macOS menu bar.

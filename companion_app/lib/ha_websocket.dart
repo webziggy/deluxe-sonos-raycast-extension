@@ -206,10 +206,37 @@ class HAWebSocket {
             
             final skipItunes = configForChannel['skipItunes'] == true;
             final customBadge = configForChannel['badgeUrl'] as String?;
+            final parseStyle = configForChannel['itunesParseStyle'] as String?; // 'auto', 'artist_title', 'title_artist'
 
             if (!skipItunes) {
               try {
-                final cleanQuery = itunesQuery.replaceAll(' - ', ' ').replaceAll(RegExp(r'\s+'), ' ');
+                String cleanQuery = itunesQuery.replaceAll(' - ', ' ').replaceAll(RegExp(r'\s+'), ' ');
+                
+                // If a specific parse style is set and a hyphen exists, we can extract the exact parts
+                if (parseStyle != null && parseStyle != 'auto' && itunesQuery.contains(' - ')) {
+                  final parts = itunesQuery.split(' - ');
+                  if (parts.length >= 2) {
+                    final part1 = parts[0].trim();
+                    final part2 = parts.sublist(1).join(' - ').trim(); // In case there are multiple hyphens
+                    
+                    String parsedArtist = '';
+                    String parsedTitle = '';
+                    
+                    if (parseStyle == 'artist_title') {
+                      parsedArtist = part1;
+                      parsedTitle = part2;
+                    } else if (parseStyle == 'title_artist') {
+                      parsedTitle = part1;
+                      parsedArtist = part2;
+                    }
+                    
+                    // Rebuild the query cleanly for iTunes
+                    cleanQuery = "$parsedTitle $parsedArtist".replaceAll(RegExp(r'\s+'), ' ');
+                    
+                    // AND we can beautifully format the track string for the notification itself!
+                    trackString = "$parsedTitle - $parsedArtist";
+                  }
+                }
                 final query = Uri.encodeQueryComponent(cleanQuery);
                 final url = Uri.parse('https://itunes.apple.com/search?term=$query&entity=song&limit=1');
                 final response = await http.get(url).timeout(const Duration(milliseconds: 1500));

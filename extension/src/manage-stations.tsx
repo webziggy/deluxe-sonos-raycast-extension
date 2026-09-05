@@ -156,6 +156,9 @@ function ConfigureStation({
   const [skipItunes, setSkipItunes] = useState(
     currentConfig.skipItunes === true,
   );
+  const [itunesParseStyle, setItunesParseStyle] = useState(
+    currentConfig.itunesParseStyle || "auto",
+  );
   const [badgeUrl, setBadgeUrl] = useState(currentConfig.badgeUrl || "");
   const [favouriteMatch, setFavouriteMatch] = useState(
     currentConfig.linkedFavourite || "_none_",
@@ -221,6 +224,7 @@ function ConfigureStation({
       const allConfig = await getStationConfig();
       allConfig[channelName] = {
         skipItunes,
+        itunesParseStyle,
         badgeUrl: badgeUrl.trim() === "" ? null : badgeUrl.trim(),
         linkedFavourite: favouriteMatch === "_none_" ? null : favouriteMatch,
       };
@@ -264,6 +268,26 @@ function ConfigureStation({
         onChange={setSkipItunes}
         info="Enable this if the station natively provides high-resolution album art."
       />
+
+      {!skipItunes && (
+        <Form.Dropdown
+          id="itunesParseStyle"
+          title="iTunes Parsing Mode"
+          info="If the station uses a hyphen, explicit splitting forces the notification to render cleanly and improves iTunes matching accuracy."
+          value={itunesParseStyle}
+          onChange={setItunesParseStyle}
+        >
+          <Form.Dropdown.Item value="auto" title="Auto (Send Entire String)" />
+          <Form.Dropdown.Item
+            value="artist_title"
+            title="Extract as: [Artist] - [Song]"
+          />
+          <Form.Dropdown.Item
+            value="title_artist"
+            title="Extract as: [Song] - [Artist]"
+          />
+        </Form.Dropdown>
+      )}
 
       <Form.Separator />
 
