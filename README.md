@@ -6,6 +6,10 @@ A native, blazing-fast Raycast extension to seamlessly control your Sonos ecosys
 ## Features
 
 - **🎵 Menu Bar Controller**: A native macOS menu bar dropdown for instantly controlling your pinned default speaker.
+- **⭐️ Menu Bar Favourites**: Instantly access your favourites from the Menu Bar, intelligently grouped into native macOS sub-menus (Playlists, Radio, etc.) matching your Favourites Grid.
+- **⏯️ Play Last**: A quick action dynamically appears when nothing is playing, allowing you to instantly resume your last played favourite.
+- **🛡️ Robust Stability**: Built-in Error Boundaries and zero-latency caching ensure the extension perfectly syncs with Home Assistant without freezing.
+
 - **🖼️ Rich Favourites Grid**: A beautiful Raycast Grid view that pulls in your Sonos radio stations and Spotify playlists with high-res album artwork. Features 0ms caching for instant loading without a spinner.
 - **📋 Live Playback Queue**: A detailed List view showing the current playback queue for any speaker, with the ability to jump to tracks, remove them (`Cmd + Backspace`), or clear the entire queue (`Cmd + Shift + Backspace`).
 - **🤝 Intelligent Grouping**: Automatically detects grouped speakers, providing master controls alongside fully independent volume overrides for each member.
