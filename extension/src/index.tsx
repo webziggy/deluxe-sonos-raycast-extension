@@ -423,7 +423,7 @@ export default function Command() {
           />
         ))}
 
-        {fullNowPlaying === "Idle" && lastFavourites[player.entity_id] && (
+        {(fullNowPlaying === "Idle" || state === "paused") && lastFavourites[player.entity_id] && (
             <MenuBarExtra.Item 
                 title={`\u2800▶ Play Last: ${lastFavourites[player.entity_id]}`} 
                 onAction={async () => {
