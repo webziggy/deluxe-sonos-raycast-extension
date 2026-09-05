@@ -33,6 +33,14 @@ export default function Command() {
 
   const [allowlist, setAllowlist] = useState<string[]>([]);
   const [blocklist, setBlocklist] = useState<string[]>([]);
+  const [structuredFavourites, setStructuredFavourites] = useState<{ title: string; items: any[] }[]>(() => {
+    const cached = cache.get("favourites");
+    try {
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
 
   useEffect(() => {
     // Sync the initial pinned speaker to the companion app so it knows right away
@@ -633,7 +641,21 @@ export default function Command() {
         )}
 
         <MenuBarExtra.Section>
-          {sourceList.length > 0 && (
+          {structuredFavourites.length > 0 ? (
+            <MenuBarExtra.Submenu title="Favourites" icon={Icon.Star}>
+              {structuredFavourites.map((section) => (
+                <MenuBarExtra.Submenu key={section.title} title={section.title}>
+                  {section.items.map((fav: any, index: number) => (
+                    <MenuBarExtra.Item
+                      key={`${fav.media_content_id || fav.title}-${index}`}
+                      title={fav.title}
+                      onAction={() => handleSelectSource(player.entity_id, fav.title)}
+                    />
+                  ))}
+                </MenuBarExtra.Submenu>
+              ))}
+            </MenuBarExtra.Submenu>
+          ) : sourceList.length > 0 ? (
             <MenuBarExtra.Submenu title="Favourites" icon={Icon.Star}>
               {sourceList.map((source) => (
                 <MenuBarExtra.Item
@@ -643,7 +665,7 @@ export default function Command() {
                 />
               ))}
             </MenuBarExtra.Submenu>
-          )}
+          ) : null}
           <MenuBarExtra.Item
             title="Open Favourites Grid..."
             icon={Icon.AppWindowGrid3x3}
