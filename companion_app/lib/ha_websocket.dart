@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -237,6 +238,12 @@ class HAWebSocket {
                     trackString = "$parsedTitle - $parsedArtist";
                   }
                 }
+
+                // Log the final query so the user can debug it!
+                try {
+                  final logFile = File('${Platform.environment['HOME']}/.sonos_companion_itunes.log');
+                  logFile.writeAsStringSync('[${DateTime.now().toIso8601String()}] Channel: $channelName | Original: $itunesQuery | Clean Query: $cleanQuery\n', mode: FileMode.append);
+                } catch(e) {}
                 final query = Uri.encodeQueryComponent(cleanQuery);
                 final url = Uri.parse('https://itunes.apple.com/search?term=$query&entity=song&limit=1');
                 final response = await http.get(url).timeout(const Duration(milliseconds: 1500));
