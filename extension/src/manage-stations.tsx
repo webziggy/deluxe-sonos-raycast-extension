@@ -280,11 +280,11 @@ function ConfigureStation({
           <Form.Dropdown.Item value="auto" title="Auto (Send Entire String)" />
           <Form.Dropdown.Item
             value="artist_title"
-            title="Extract as: [Artist] - [Song]"
+            title="Incoming Format: [Artist] - [Song]"
           />
           <Form.Dropdown.Item
             value="title_artist"
-            title="Extract as: [Song] - [Artist]"
+            title="Incoming Format: [Song] - [Artist]"
           />
         </Form.Dropdown>
       )}
