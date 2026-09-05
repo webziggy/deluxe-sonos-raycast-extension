@@ -150,7 +150,7 @@ export default function Command(
         ) : null
       }
     >
-      {favourites.length === 0 && !isLoading && !favsLoading && (
+      {(Array.isArray(favourites) ? favourites : []).length === 0 && !isLoading && !favsLoading && (
         <Grid.EmptyView
           title={`No ${getSpelling("Favourites")} Found`}
           description={`Add Sonos ${getSpelling("favourites")} in the Sonos app or Home Assistant.`}
@@ -160,7 +160,7 @@ export default function Command(
 
       {favourites.map((section: any) => (
         <Grid.Section key={section.title} title={section.title}>
-          {section.items.map((fav: any, index: number) => {
+          {(Array.isArray(section.items) ? section.items : []).map((fav: any, index: number) => {
             const isPlaying = fav.title === currentSource;
             const imageUrl = getFullImageUrl(fav.thumbnail);
 

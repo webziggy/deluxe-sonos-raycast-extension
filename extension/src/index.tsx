@@ -635,11 +635,11 @@ export default function Command() {
         )}
 
         <MenuBarExtra.Section>
-          {structuredFavourites.length > 0 ? (
+          {(Array.isArray(structuredFavourites) ? structuredFavourites : []).length > 0 ? (
             <MenuBarExtra.Submenu title="Favourites" icon={Icon.Star}>
-              {structuredFavourites.map((section: any) => (
+              {(Array.isArray(structuredFavourites) ? structuredFavourites : []).map((section: any) => (
                 <MenuBarExtra.Submenu key={section.title} title={section.title}>
-                  {section.items.map((fav: any, index: number) => (
+                  {(Array.isArray(section.items) ? section.items : []).map((fav: any, index: number) => (
                     <MenuBarExtra.Item
                       key={`${fav.media_content_id || fav.title}-${index}`}
                       title={fav.title}
