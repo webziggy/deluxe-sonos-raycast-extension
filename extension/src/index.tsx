@@ -377,18 +377,6 @@ export default function Command() {
         nowPlayingLines = [fullNowPlaying];
       } else {
         nowPlayingLines = wrapText(fullNowPlaying, maxLen);
-        const source = player.attributes?.source;
-        const channel = player.attributes?.media_channel;
-        const favouriteName = source || channel;
-
-        // If we have a favourite/channel name, and it isn't completely redundant with the title/artist, prepend it!
-        if (
-          favouriteName &&
-          favouriteName !== mediaTitle &&
-          favouriteName !== mediaArtist
-        ) {
-          nowPlayingLines = [`\u2800🌟 ${favouriteName}`, ...nowPlayingLines];
-        }
       }
     } else if (state === "unavailable" || state === "unknown") {
       fullNowPlaying = "Offline";
