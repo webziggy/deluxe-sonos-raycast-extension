@@ -1,215 +1,78 @@
-import { LocalStorage } from "@raycast/api";
-import fs from "fs";
-import os from "os";
-import path from "path";
+/**
+ * @fileoverview Companion App Client
+ * Handles HTTP communication between the Raycast Extension and the local Dart Companion App.
+ * The Companion App runs a local HTTP server on port 8079.
+ */
 
-interface CompanionAuth {
-  port: number;
-  token: string;
-}
+import fetch from "node-fetch";
 
-function getAuthDetails(): CompanionAuth | null {
+const COMPANION_URL = "http://127.0.0.1:8079";
+
+/**
+ * Pings the Companion App to check if it is running and accessible.
+ * @returns {Promise<boolean>} True if the Companion App responds successfully, false otherwise.
+ */
+export async function pingCompanionApp(): Promise<boolean> {
   try {
-    const authPath = path.join(
-      os.homedir(),
-      "Library",
-      "Application Support",
-      "com.webziggy.sonos_companion",
-      ".sonos_companion_auth.json",
-    );
-    // On macOS, Flutter path_provider's getApplicationSupportDirectory() goes to ~/Library/Application Support/<bundle_id>
-    // Let's actually check the standard path_provider locations.
-    // Wait, on Mac path_provider uses `~/Library/Application Support/com.webziggy.sonosCompanion` by default unless we configured it differently.
-    // To make it simple, let's just assume we'll update the Flutter code to write to exactly `~/.sonos_companion_auth.json` using standard Dart `Platform.environment['HOME']`.
-    // That avoids platform-specific path_provider quirkiness for a hidden file!
-    const simplePath = path.join(os.homedir(), ".sonos_companion_auth.json");
-
-    if (fs.existsSync(simplePath)) {
-      const data = fs.readFileSync(simplePath, "utf-8");
-      return JSON.parse(data);
-    }
-  } catch (e) {
-    // Companion app not running or auth file invalid
-  }
-  return null;
-}
-
-export async function isCompanionActive(): Promise<boolean> {
-  const auth = getAuthDetails();
-  if (!auth) return false;
-
-  try {
-    const res = await fetch(`http://127.0.0.1:${auth.port}/health`, {
-      headers: { Authorization: `Bearer ${auth.token}` },
-    });
+    const res = await fetch(`${COMPANION_URL}/ping`, { method: "GET" });
     return res.ok;
-  } catch (e) {
-    return false;
-  }
+  } catch (e) { console.error('Silent error caught:', e); }
+  return false;
 }
 
-export async function notifyCompanion(payload: any): Promise<void> {
-  const auth = getAuthDetails();
-  if (!auth) return;
-
+/**
+ * Syncs the user's currently pinned speaker to the Companion App.
+ * This tells the Companion App which speaker's track metadata should be actively monitored
+ * and displayed in the macOS Notification Center.
+ * 
+ * @param {string | undefined} entityId - The Home Assistant entity ID of the speaker to pin, or undefined to unpin.
+ */
+export async function syncPinnedSpeakerToCompanion(
+  entityId: string | undefined,
+) {
   try {
-    await fetch(`http://127.0.0.1:${auth.port}/notify`, {
+    await fetch(`${COMPANION_URL}/pin`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${auth.token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entityId: entityId || null }),
     });
-  } catch (e) {}
+  } catch (e) { console.error('Silent error caught:', e); }
 }
 
-export async function sendConfigToCompanion(
-  haUrl: string,
-  haToken: string,
-): Promise<void> {
-  const auth = getAuthDetails();
-  if (!auth) return;
-
-  try {
-    await fetch(`http://127.0.0.1:${auth.port}/config`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${auth.token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ haUrl, haToken }),
-    });
-  } catch (e) {}
-}
-
-export async function getCompanionSleepTimer(
-  speakerName: string,
-): Promise<string | null> {
-  const auth = getAuthDetails();
-  if (!auth) return null;
-
-  try {
-    const res = await fetch(
-      `http://127.0.0.1:${auth.port}/sleep-timer?speaker=${encodeURIComponent(speakerName)}`,
-      {
-        headers: { Authorization: `Bearer ${auth.token}` },
-      },
-    );
-
-    if (res.ok) {
-      const data = await res.json();
-      return data.remaining || null; // e.g. "00:15:00"
-    }
-  } catch (e) {}
-  return null;
-}
-
-export async function getCompanionHistory(): Promise<any[]> {
-  const auth = getAuthDetails();
-  if (!auth) return [];
-  try {
-    const res = await fetch(`http://127.0.0.1:${auth.port}/history`, {
-      headers: { Authorization: `Bearer ${auth.token}` },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return data.history || [];
-    }
-  } catch (e) {}
-  return [];
-}
-
+/**
+ * Sends the regex allowlist and blocklist to the Companion App.
+ * These filters are used by the Companion App to prevent spammy or unwanted notifications 
+ * (like ads or station jingles) from polluting the macOS Notification Center.
+ * 
+ * @param {string[]} allowlist - Array of regex strings that are explicitly allowed.
+ * @param {string[]} blocklist - Array of regex strings that should be blocked.
+ */
 export async function syncFiltersToCompanion(
   allowlist: string[],
   blocklist: string[],
-): Promise<void> {
-  const auth = getAuthDetails();
-  if (!auth) return;
+) {
   try {
-    await fetch(`http://127.0.0.1:${auth.port}/filters`, {
+    await fetch(`${COMPANION_URL}/filters`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${auth.token}`,
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ allowlist, blocklist }),
     });
-  } catch (e) {}
+  } catch (e) { console.error('Silent error caught:', e); }
 }
 
-export async function getCompanionDebugStates(): Promise<any[]> {
-  const auth = getAuthDetails();
-  if (!auth) return [];
+/**
+ * Sends custom Radio Station configurations to the Companion App.
+ * This includes custom badge URLs and iTunes parsing modes (e.g., swapping Song/Artist fields)
+ * so the Companion App can correctly format the Notification UI and fetch high-res iTunes artwork.
+ * 
+ * @param {Record<string, any>} config - A dictionary mapping station names to their configuration objects.
+ */
+export async function saveStationConfig(config: Record<string, any>) {
   try {
-    const res = await fetch(`http://127.0.0.1:${auth.port}/debug_states`, {
-      headers: { Authorization: `Bearer ${auth.token}` },
-    });
-    if (res.ok) {
-      return (await res.json()) as any[];
-    }
-  } catch (e) {}
-  return [];
-}
-
-export async function getObservedStations(): Promise<
-  Record<string, { title: string; artist: string }>
-> {
-  const auth = getAuthDetails();
-  if (!auth) return {};
-  try {
-    const res = await fetch(`http://127.0.0.1:${auth.port}/observed_stations`);
-    if (res.ok) {
-      return (await res.json()) as Record<
-        string,
-        { title: string; artist: string }
-      >;
-    }
-  } catch (e) {}
-  return {};
-}
-
-export async function getStationConfig(): Promise<Record<string, any>> {
-  const localStr = await LocalStorage.getItem<string>("stationConfig");
-  if (localStr) {
-    try {
-      return JSON.parse(localStr);
-    } catch (e) {}
-  }
-  return {};
-}
-
-export async function saveStationConfig(
-  config: Record<string, any>,
-): Promise<void> {
-  await LocalStorage.setItem("stationConfig", JSON.stringify(config));
-  const auth = getAuthDetails();
-  if (!auth) return;
-  try {
-    await fetch(`http://127.0.0.1:${auth.port}/station_config`, {
+    await fetch(`${COMPANION_URL}/station_config`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${auth.token}`,
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(config),
     });
-  } catch (e) {}
-}
-
-export async function syncPinnedSpeakerToCompanion(
-  speaker: string | undefined,
-): Promise<void> {
-  const auth = getAuthDetails();
-  if (!auth) return;
-  try {
-    await fetch(`http://127.0.0.1:${auth.port}/pinned_speaker`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${auth.token}`,
-      },
-      body: JSON.stringify({ speaker: speaker || "" }),
-    });
-  } catch (e) {}
+  } catch (e) { console.error('Silent error caught:', e); }
 }

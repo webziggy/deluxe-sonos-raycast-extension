@@ -1,10 +1,10 @@
+import { CacheManager } from "./cacheManager";
 import {
   Grid,
   ActionPanel,
   Action,
   Icon,
   openCommandPreferences,
-  Cache,
   LaunchProps,
 } from "@raycast/api";
 import { useEffect, useState } from "react";
@@ -12,7 +12,6 @@ import { callService, getFullImageUrl, fetchFavourites } from "./api";
 import { useSonosPlayers } from "./useSonosPlayers";
 import { getSpelling } from "./locale";
 
-const cache = new Cache();
 
 export default function Command(
   props: LaunchProps<{ launchContext?: { entityId?: string } }>,
@@ -25,7 +24,7 @@ export default function Command(
   const [favourites, setFavourites] = useState<
     { title: string; items: any[] }[]
   >(() => {
-    const cached = cache.get("favourites");
+    const cached = CacheManager.getString("favourites");
     try {
       return cached ? JSON.parse(cached) : [];
     } catch {
@@ -36,7 +35,7 @@ export default function Command(
 
   useEffect(() => {
     if (!selectedSpeaker && sonosPlayers.length > 0) {
-      const pinned = cache.get("pinnedSpeaker");
+      const pinned = CacheManager.getString("pinnedSpeaker");
       setSelectedSpeaker(
         pinned && sonosPlayers.find((p) => p.entity_id === pinned)
           ? pinned
@@ -94,7 +93,7 @@ export default function Command(
           }
 
           setFavourites(newSections);
-          cache.set("favourites", JSON.stringify(newSections));
+          CacheManager.setJSON("favourites", newSections);
 
           setFavsLoading(false);
         })

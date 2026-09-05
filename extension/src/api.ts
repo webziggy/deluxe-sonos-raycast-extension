@@ -96,6 +96,15 @@ export async function getHAConnection(): Promise<Connection> {
   return connectionPromise;
 }
 
+/**
+ * Executes a Home Assistant service call via the REST API.
+ * This is used for all playback controls (Play, Pause, Volume, Next Track, etc).
+ * 
+ * @param {string} domain - The Home Assistant domain (e.g., "media_player").
+ * @param {string} service - The specific service to call (e.g., "media_play_pause").
+ * @param {object} data - The JSON payload containing the entity_id and any service arguments.
+ * @returns {Promise<void>}
+ */
 export async function callService(
   domain: string,
   service: string,

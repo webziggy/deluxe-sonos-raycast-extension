@@ -1,17 +1,16 @@
+import { CacheManager } from "./cacheManager";
 import {
   List,
   ActionPanel,
   Action,
   Icon,
   openCommandPreferences,
-  Cache,
   LaunchProps,
 } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { callService, fetchQueue, getFullImageUrl } from "./api";
 import { useSonosPlayers } from "./useSonosPlayers";
 
-const cache = new Cache();
 
 interface QueueItem {
   media_title: string;
@@ -37,7 +36,7 @@ export default function Command(
 
   useEffect(() => {
     if (!selectedSpeaker && sonosPlayers.length > 0) {
-      const pinned = cache.get("pinnedSpeaker");
+      const pinned = CacheManager.getString("pinnedSpeaker");
       setSelectedSpeaker(
         pinned && sonosPlayers.find((p) => p.entity_id === pinned)
           ? pinned

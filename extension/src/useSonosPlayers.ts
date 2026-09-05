@@ -1,3 +1,4 @@
+import { CacheManager } from "./cacheManager";
 import { useState, useEffect, useRef } from "react";
 import { Cache, getPreferenceValues } from "@raycast/api";
 import {
@@ -9,7 +10,6 @@ import {
 import { subscribeEntities } from "home-assistant-js-websocket";
 import { isCompanionActive, notifyCompanion } from "./companionClient";
 
-const cache = new Cache();
 
 interface UseSonosPlayersResult {
   players: any[];
@@ -21,7 +21,7 @@ interface UseSonosPlayersResult {
 
 export function useSonosPlayers(): UseSonosPlayersResult {
   const [players, setPlayers] = useState<any[]>(() => {
-    const cached = cache.get("sonosPlayers");
+    const cached = CacheManager.getString("sonosPlayers");
     if (cached) {
       try {
         return JSON.parse(cached);
@@ -31,12 +31,12 @@ export function useSonosPlayers(): UseSonosPlayersResult {
     }
     return [];
   });
-  const [isLoading, setIsLoading] = useState(!cache.has("sonosPlayers"));
+  const [isLoading, setIsLoading] = useState(!CacheManager.has("sonosPlayers"));
   const [error, setError] = useState<string>();
   const [companionActive, setCompanionActive] = useState<boolean>(false);
   const [sleepTimers, setSleepTimers] = useState<Record<string, string>>({});
 
-  const lastJsonRef = useRef(cache.get("sonosPlayers") || "");
+  const lastJsonRef = useRef(CacheManager.getString("sonosPlayers") || "");
 
   useEffect(() => {
     isCompanionActive().then((isActive) => {
@@ -170,7 +170,7 @@ export function useSonosPlayers(): UseSonosPlayersResult {
 
             lastJsonRef.current = currentJson;
             setPlayers(groupedPlayers);
-            cache.set("sonosPlayers", currentJson);
+            CacheManager.set("sonosPlayers", currentJson);
           }
           setIsLoading(false);
         });
