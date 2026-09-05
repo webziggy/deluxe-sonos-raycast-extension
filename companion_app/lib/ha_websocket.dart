@@ -248,22 +248,36 @@ class HAWebSocket {
                   // If we successfully extracted/swapped them, rebuild everything
                   if (parsedTitle.isNotEmpty || parsedArtist.isNotEmpty) {
                     cleanQuery = "$parsedTitle $parsedArtist".replaceAll(RegExp(r'\s+'), ' ');
-                    trackString = "$parsedTitle - $parsedArtist";
+                    
+                    // Always output beautifully formatted as: Artist - Title
+                    trackString = "$parsedArtist - $parsedTitle";
                   }
                 }
 
                 final query = Uri.encodeQueryComponent(cleanQuery);
+                
+                // iTunes API doesn't support separate artist= and song= parameters simultaneously.
+                // We must use a single `term` parameter. Passing them both cleanly is the optimal way!
                 final url = Uri.parse('https://itunes.apple.com/search?term=$query&entity=song&limit=1');
 
                 // Log the final query so the user can debug it!
                 try {
                   final logFile = File('${Platform.environment['HOME']}/.sonos_companion_itunes.log');
+                  
+                  // We will extract what we believe are the parsed artist and title just for the log
+                  String dbgArtist = mediaArtist ?? '';
+                  String dbgTitle = mediaTitle ?? '';
+                  if (parseStyle == 'title_artist') {
+                     dbgArtist = mediaTitle ?? '';
+                     dbgTitle = mediaArtist ?? '';
+                  }
+                  
                   logFile.writeAsStringSync(
                     '\n[${DateTime.now().toIso8601String()}] Channel: $channelName\n'
-                    '  Original String : $originalItunesQuery\n'
-                    '  Clean Query     : $cleanQuery\n'
-                    '  Notification UI : $trackString\n'
-                    '  iTunes API URL  : $url\n', 
+                    '  Home Assistant Raw : Title="$mediaTitle", Artist="$mediaArtist"\n'
+                    '  Our Parsed Result  : Artist="$dbgArtist", Title="$dbgTitle"\n'
+                    '  Notification UI    : $trackString\n'
+                    '  iTunes API URL     : $url\n', 
                     mode: FileMode.append
                   );
                 } catch(e) {}
