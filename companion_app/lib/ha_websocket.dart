@@ -239,13 +239,21 @@ class HAWebSocket {
                   }
                 }
 
+                final query = Uri.encodeQueryComponent(cleanQuery);
+                final url = Uri.parse('https://itunes.apple.com/search?term=$query&entity=song&limit=1');
+
                 // Log the final query so the user can debug it!
                 try {
                   final logFile = File('${Platform.environment['HOME']}/.sonos_companion_itunes.log');
-                  logFile.writeAsStringSync('[${DateTime.now().toIso8601String()}] Channel: $channelName | Original: $itunesQuery | Clean Query: $cleanQuery\n', mode: FileMode.append);
+                  logFile.writeAsStringSync(
+                    '\n[${DateTime.now().toIso8601String()}] Channel: $channelName\n'
+                    '  Original String : $itunesQuery\n'
+                    '  Clean Query     : $cleanQuery\n'
+                    '  Notification UI : $trackString\n'
+                    '  iTunes API URL  : $url\n', 
+                    mode: FileMode.append
+                  );
                 } catch(e) {}
-                final query = Uri.encodeQueryComponent(cleanQuery);
-                final url = Uri.parse('https://itunes.apple.com/search?term=$query&entity=song&limit=1');
                 final response = await http.get(url).timeout(const Duration(milliseconds: 1500));
                 
                 if (response.statusCode == 200) {
