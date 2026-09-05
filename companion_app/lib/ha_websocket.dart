@@ -258,7 +258,7 @@ class HAWebSocket {
                 
                 // iTunes API doesn't support separate artist= and song= parameters simultaneously.
                 // We must use a single `term` parameter. Passing them both cleanly is the optimal way!
-                final url = Uri.parse('https://itunes.apple.com/search?term=$query&entity=song&limit=1');
+                final url = Uri.parse('https://itunes.apple.com/search?term=$query&media=music&entity=song&limit=1');
 
                 // Log the final query so the user can debug it!
                 try {
