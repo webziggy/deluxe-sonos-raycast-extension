@@ -84,7 +84,7 @@ export async function getHAConnection(): Promise<Connection> {
     connectionPromise = null;
     if (err === ERR_CANNOT_CONNECT) {
       throw new Error(
-        `Cannot connect to Home Assistant at ${baseUrl}. Check your URL and network.`,
+        `Cannot connect to Home Assistant at ${activeBaseUrl}. Check your URL and network.`,
       );
     }
     if (err === ERR_INVALID_AUTH) {
@@ -140,20 +140,23 @@ export async function fetchQueue(entityId: string) {
 export function getFullImageUrl(path?: string): string {
   if (!path) return "";
   if (path.startsWith("http")) return path;
-  
+
   const preferences = getPreferenceValues<Preferences>();
   const externalUrl = preferences.haUrl.trim().replace(/\/+$/, "");
-  
+
   // Start with the dynamically resolved active URL (which is proven to be reachable)
   let baseUrlToUse = activeBaseUrl || externalUrl;
-  
+
   // If the active URL is insecure (http), but the external URL is secure (https),
-  // we must route the image request through the secure external URL. 
+  // we must route the image request through the secure external URL.
   // This prevents macOS App Transport Security (ATS) from silently blocking the image render.
-  if (baseUrlToUse.startsWith("http://") && externalUrl.startsWith("https://")) {
+  if (
+    baseUrlToUse.startsWith("http://") &&
+    externalUrl.startsWith("https://")
+  ) {
     baseUrlToUse = externalUrl;
   }
-  
+
   return `${baseUrlToUse}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
