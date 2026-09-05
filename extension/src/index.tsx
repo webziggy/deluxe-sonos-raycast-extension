@@ -171,6 +171,16 @@ export default function Command() {
     })(),
   );
 
+  const [lastFavourites, setLastFavourites] = useState<Record<string, string>>(() => {
+    try {
+      return JSON.parse(cache.get("lastFavourites") || "{}");
+    } catch (e) {
+      return {};
+    }
+  });
+
+  const lastFavouritesRef = useRef<Record<string, string>>(lastFavourites);
+
   // Monitor ALL speakers for track changes to trigger History
   useEffect(() => {
     let triggeredChange = false;
@@ -211,6 +221,22 @@ export default function Command() {
         triggeredChange = true;
       }
       lastTracksRef.current[player.entity_id] = trackString;
+
+      const source = player.attributes?.source;
+      const channel = player.attributes?.media_channel;
+      const favouriteString = source || channel;
+      
+      if (
+        favouriteString &&
+        favouriteString !== lastFavouritesRef.current[player.entity_id]
+      ) {
+         setLastFavourites((prev) => {
+            const nextState = { ...prev, [player.entity_id]: favouriteString };
+            cache.set("lastFavourites", JSON.stringify(nextState));
+            return nextState;
+         });
+         lastFavouritesRef.current[player.entity_id] = favouriteString;
+      }
     }
 
     if (triggeredChange) {
@@ -381,9 +407,16 @@ export default function Command() {
     const transparentIcon =
       "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 
+    const activeFavourite = player.attributes?.source || player.attributes?.media_channel;
+    
     const content = (
       <>
         {isRoot && <MenuBarExtra.Item title={title} icon={Icon.Speaker} />}
+        
+        {(state === "playing" || state === "paused") && activeFavourite && activeFavourite !== mediaTitle && activeFavourite !== mediaArtist && (
+            <MenuBarExtra.Item title={`\u2800${activeFavourite}`} />
+        )}
+        
         {nowPlayingLines.map((line, index) => (
           <MenuBarExtra.Item
             key={`nowPlaying-${index}`}
@@ -392,7 +425,7 @@ export default function Command() {
               isRoot ? (index === 0 ? stateIcon : transparentIcon) : undefined
             }
             onAction={
-              fullNowPlaying !== "Idle" && fullNowPlaying !== "Offline"
+              fullNowPlaying !== "Idle" && fullNowPlaying !== "Offline" && fullNowPlaying !== "Notification Blocked by Filter"
                 ? () =>
                     open(
                       `https://www.google.com/search?q=${encodeURIComponent(fullNowPlaying)}`,
@@ -401,6 +434,19 @@ export default function Command() {
             }
           />
         ))}
+
+        {fullNowPlaying === "Idle" && lastFavourites[player.entity_id] && (
+            <MenuBarExtra.Item 
+                title={`\u2800▶ Play Last: ${lastFavourites[player.entity_id]}`} 
+                onAction={async () => {
+                   await callService("media_player", "select_source", {
+                      entity_id: player.entity_id,
+                      source: lastFavourites[player.entity_id]
+                   });
+                }} 
+            />
+        )}
+        
         {!isRoot && <MenuBarExtra.Item title={`State: ${state}`} />}
 
         <MenuBarExtra.Section title="Controls">
