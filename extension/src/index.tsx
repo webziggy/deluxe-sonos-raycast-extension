@@ -373,7 +373,7 @@ export default function Command() {
       }
 
       if (!allowed) {
-        fullNowPlaying = "Notification Blocked by Filter";
+        fullNowPlaying = "Nothing playing";
         nowPlayingLines = [fullNowPlaying];
       } else {
         nowPlayingLines = wrapText(fullNowPlaying, maxLen);
@@ -413,7 +413,7 @@ export default function Command() {
               isRoot ? (index === 0 ? stateIcon : transparentIcon) : undefined
             }
             onAction={
-              fullNowPlaying !== "Idle" && fullNowPlaying !== "Offline" && fullNowPlaying !== "Notification Blocked by Filter"
+              fullNowPlaying !== "Idle" && fullNowPlaying !== "Offline" && fullNowPlaying !== "Nothing playing"
                 ? () =>
                     open(
                       `https://www.google.com/search?q=${encodeURIComponent(fullNowPlaying)}`,
@@ -421,23 +421,22 @@ export default function Command() {
                 : undefined
             }
           />
-        ))}
-
-        {(fullNowPlaying === "Idle" || state === "paused") && lastFavourites[player.entity_id] && (
-            <MenuBarExtra.Item 
-                title={`\u2800▶ Play Last: ${lastFavourites[player.entity_id]}`} 
-                onAction={async () => {
-                   await callService("media_player", "select_source", {
-                      entity_id: player.entity_id,
-                      source: lastFavourites[player.entity_id]
-                   });
-                }} 
-            />
-        )}
-        
+        ))}        
         {!isRoot && <MenuBarExtra.Item title={`State: ${state}`} />}
 
         <MenuBarExtra.Section title="Controls">
+          {(fullNowPlaying === "Idle" || fullNowPlaying === "Nothing playing" || state === "paused") && lastFavourites[player.entity_id] && (
+            <MenuBarExtra.Item
+              title={`Play Last: ${lastFavourites[player.entity_id]}`}
+              icon={Icon.Play}
+              onAction={async () => {
+                await callService("media_player", "select_source", {
+                  entity_id: player.entity_id,
+                  source: lastFavourites[player.entity_id],
+                });
+              }}
+            />
+          )}
           <MenuBarExtra.Item
             title={state === "playing" ? "Pause" : "Play"}
             icon={state === "playing" ? Icon.Pause : Icon.Play}
