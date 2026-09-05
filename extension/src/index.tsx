@@ -1,4 +1,3 @@
-import { useCachedState } from "@raycast/utils";
 import {
   syncPinnedSpeakerToCompanion,
   syncFiltersToCompanion,
@@ -34,7 +33,19 @@ export default function Command() {
 
   const [allowlist, setAllowlist] = useState<string[]>([]);
   const [blocklist, setBlocklist] = useState<string[]>([]);
-  const [structuredFavourites, setStructuredFavourites] = useCachedState<{ title: string; items: any[] }[]>("favourites", []);
+  const [structuredFavourites, setStructuredFavourites] = useState<{ title: string; items: any[] }[]>([]);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      try {
+        const cached = cache.get("favourites");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          setStructuredFavourites(parsed);
+        }
+      } catch (e) {}
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     // Sync the initial pinned speaker to the companion app so it knows right away
@@ -638,11 +649,11 @@ export default function Command() {
           {(Array.isArray(structuredFavourites) ? structuredFavourites : []).length > 0 ? (
             <MenuBarExtra.Submenu title="Favourites" icon={Icon.Star}>
               {(Array.isArray(structuredFavourites) ? structuredFavourites : []).map((section: any) => (
-                <MenuBarExtra.Submenu key={section.title} title={section.title}>
+                <MenuBarExtra.Submenu key={section.title} title={section.title || "Unknown"}>
                   {(Array.isArray(section.items) ? section.items : []).map((fav: any, index: number) => (
                     <MenuBarExtra.Item
                       key={`${fav.media_content_id || fav.title}-${index}`}
-                      title={fav.title}
+                      title={fav.title || "Unknown"}
                       onAction={() => handleSelectSource(player.entity_id, fav.title)}
                     />
                   ))}

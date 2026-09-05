@@ -1,4 +1,3 @@
-import { useCachedState } from "@raycast/utils";
 import {
   Grid,
   ActionPanel,
@@ -23,9 +22,13 @@ export default function Command(
   const [selectedSpeaker, setSelectedSpeaker] = useState<string>(
     props.launchContext?.entityId || "",
   );
-  const [favourites, setFavourites] = useCachedState<
+  const [favourites, setFavourites] = useState<
     { title: string; items: any[] }[]
-  >("favourites", []);
+  >(() => {
+    const cached = cache.get("favourites");
+    try { return cached ? JSON.parse(cached) : []; }
+    catch { return []; }
+  });
   const [favsLoading, setFavsLoading] = useState(false);
 
   useEffect(() => {
@@ -88,6 +91,7 @@ export default function Command(
           }
 
           setFavourites(newSections);
+          cache.set("favourites", JSON.stringify(newSections));
           
           setFavsLoading(false);
         })
