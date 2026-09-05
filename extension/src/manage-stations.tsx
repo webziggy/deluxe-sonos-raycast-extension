@@ -315,6 +315,9 @@ function ConfigureStation({
           value="_none_"
           title={`-- Select a ${getSpelling("Favourite")} --`}
         />
+        {favouriteMatch !== "_none_" && !favourites.some(s => s.items.some(f => f.title === favouriteMatch)) && (
+          <Form.Dropdown.Item value={favouriteMatch} title={`${favouriteMatch} (Loading...)`} />
+        )}
         {favourites.map((section) => (
           <Form.Dropdown.Section key={section.title} title={section.title}>
             {section.items.map((fav) => (
