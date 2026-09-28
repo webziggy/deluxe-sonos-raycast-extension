@@ -228,6 +228,14 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
               'volume_level': level,
             });
           }
+        } else if (action == 'play_favourite') {
+          final source = args['source'];
+          if (source != null) {
+            haWebSocket.callService('media_player', 'select_source', {
+              'entity_id': entityId,
+              'source': source,
+            });
+          }
         }
       }
     });
@@ -259,6 +267,7 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
          'track': globalServer.trackHistory.isNotEmpty ? globalServer.trackHistory.first : null,
          'history': globalServer.trackHistory,
          'speakers': haWebSocket.availableSpeakers,
+         'favourites': haWebSocket.availableFavourites,
          'pinnedSpeaker': currentConfig?['pinnedSpeaker'],
       });
 

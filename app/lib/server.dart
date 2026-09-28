@@ -234,11 +234,15 @@ class LocalServer {
       return Response.ok(jsonEncode({'history': trackHistory}), headers: {'content-type': 'application/json'});
     });
 
-    // We bind to port 0 to let the OS assign an available port automatically to avoid conflicts
-    _server = await io.serve(router.call, '127.0.0.1', 0);
+    // We bind to the specified port
+    try {
+      _server = await io.serve(router.call, '127.0.0.1', port);
+    } catch (e) {
+      // Fallback to port 0 if the specified port is in use
+      print('Failed to bind to port $port, falling back to port 0: $e');
+      _server = await io.serve(router.call, '127.0.0.1', 0);
+    }
     print('Server listening on port ${_server.port}');
-
-    await _writeAuthFile();
   }
 
   String _getAuthFilePath() {

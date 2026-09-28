@@ -66,6 +66,7 @@ class _PopoverSubWindowState extends State<PopoverSubWindow> {
     final pinnedSpeaker = _currentState?['pinnedSpeaker'] as String? ?? '';
     final speakers = List<Map>.from(_currentState?['speakers'] ?? []);
     final history = List<Map>.from(_currentState?['history'] ?? []);
+    final favourites = List<String>.from(_currentState?['favourites'] ?? []);
 
     final badgeUrl = trackData?['badgeUrl'] as String?;
     Widget artworkWidget = const Icon(Icons.music_note, size: 32, color: Colors.white54);
@@ -268,7 +269,30 @@ class _PopoverSubWindowState extends State<PopoverSubWindow> {
                   // 4. Expanded List
                   Expanded(
                     child: _showFavourites
-                      ? Center(child: Text('No Favourites setup yet', style: TextStyle(color: Colors.white54, fontSize: 12)))
+                      ? (favourites.isEmpty 
+                          ? const Center(child: Text('No Favourites found', style: TextStyle(color: Colors.white54, fontSize: 12)))
+                          : ListView.builder(
+                              padding: EdgeInsets.zero,
+                              itemCount: favourites.length,
+                              itemBuilder: (context, index) {
+                                final fav = favourites[index];
+                                return ListTile(
+                                  leading: const Icon(Icons.star, size: 16, color: Colors.amber),
+                                  title: Text(fav, style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  dense: true,
+                                  visualDensity: VisualDensity.compact,
+                                  onTap: () {
+                                    if (pinnedSpeaker.isNotEmpty) {
+                                      WindowController.fromWindowId('0').invokeMethod('playback_action', {
+                                        'action': 'play_favourite', 
+                                        'entity_id': pinnedSpeaker,
+                                        'source': fav,
+                                      });
+                                    }
+                                  },
+                                );
+                              },
+                            ))
                       : ListView.builder(
                           padding: EdgeInsets.zero,
                           itemCount: history.length,

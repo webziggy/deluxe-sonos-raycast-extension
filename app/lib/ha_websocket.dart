@@ -14,12 +14,32 @@ class HAWebSocket {
   int _msgId = 1;
   int? _getStatesMsgId;
   Timer? _pingTimer;
+  bool _awaitingPong = false;
 
   final Map<String, String> _lastTracks = {};
   List<dynamic> rawStatesCache = [];
   Map<String, Map<String, String>> observedStations = {};
 
   HAWebSocket({required this.onTrackChange});
+
+  List<String> get availableFavourites {
+    final favourites = <String>{};
+    for (final state in rawStatesCache) {
+      final entityId = state['entity_id'] as String? ?? '';
+      if (entityId.startsWith('media_player.')) {
+        final sourceList = state['attributes']?['source_list'];
+        if (sourceList is List) {
+          for (final source in sourceList) {
+            if (source is String) {
+              favourites.add(source);
+            }
+          }
+        }
+      }
+    }
+    final sorted = favourites.toList()..sort();
+    return sorted;
+  }
 
   List<Map<String, String>> get availableSpeakers {
     final speakers = <Map<String, String>>[];
@@ -72,6 +92,11 @@ class HAWebSocket {
     final data = jsonDecode(message as String);
     final type = data['type'];
 
+    if (type == 'pong') {
+      _awaitingPong = false;
+      return;
+    }
+    
     if (type == 'auth_required') {
       _channel?.sink.add(jsonEncode({
         'type': 'auth',
@@ -84,6 +109,12 @@ class HAWebSocket {
       _pingTimer?.cancel();
       _pingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
         if (_isConnected && _channel != null) {
+          if (_awaitingPong) {
+            print('HA WebSocket missed pong! Reconnecting...');
+            _handleDisconnect();
+            return;
+          }
+          _awaitingPong = true;
           _channel!.sink.add(jsonEncode({'id': _msgId++, 'type': 'ping'}));
         }
       });
