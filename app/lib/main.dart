@@ -48,14 +48,16 @@ Future<void> main(List<String> args) async {
     final config = await AppConfig.loadConfig();
     
     // 1. Initialize HA WebSocket and local server in the MAIN window
-    haWebSocket = HAWebSocket(onTrackChange: (trackData, isInitialSync) async {
+    haWebSocket = HAWebSocket(onTrackChange: (trackData, isInitialSync, isNewTrack) async {
       final trackName = trackData['track'] ?? 'Unknown Track';
       final speakerName = trackData['speaker'] ?? 'Unknown Speaker';
       
       // Update the local history array (for the Raycast HTTP API)
-      globalServer.trackHistory.insert(0, trackData);
-      if (globalServer.trackHistory.length > 10) {
-        globalServer.trackHistory.removeLast();
+      if (isNewTrack) {
+        globalServer.trackHistory.insert(0, trackData);
+        if (globalServer.trackHistory.length > 10) {
+          globalServer.trackHistory.removeLast();
+        }
       }
 
       // If the Popover window exists, send the rich state via IPC
@@ -70,7 +72,7 @@ Future<void> main(List<String> args) async {
       }
 
       final currentConfig = await AppConfig.loadConfig();
-      if (!isInitialSync && (currentConfig?['notificationsEnabled'] ?? true) == true) {
+      if (!isInitialSync && isNewTrack && (currentConfig?['notificationsEnabled'] ?? true) == true) {
         if (_notificationWindowId != null) {
           try {
             await WindowController.fromWindowId(_notificationWindowId!).invokeMethod('update_track', trackData);
@@ -228,12 +230,14 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
               'volume_level': level,
             });
           }
-        } else if (action == 'play_favourite') {
-          final source = args['source'];
-          if (source != null) {
-            haWebSocket.callService('media_player', 'select_source', {
+        } else if (action == 'play_media') {
+          final mediaContentType = args['media_content_type'];
+          final mediaContentId = args['media_content_id'];
+          if (mediaContentType != null && mediaContentId != null) {
+            haWebSocket.callService('media_player', 'play_media', {
               'entity_id': entityId,
-              'source': source,
+              'media_content_type': mediaContentType,
+              'media_content_id': mediaContentId,
             });
           }
         }
@@ -267,7 +271,7 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
          'track': globalServer.trackHistory.isNotEmpty ? globalServer.trackHistory.first : null,
          'history': globalServer.trackHistory,
          'speakers': haWebSocket.availableSpeakers,
-         'favourites': haWebSocket.availableFavourites,
+         'favourites': haWebSocket.nestedFavouritesCache[currentConfig?['pinnedSpeaker'] ?? ''] ?? [],
          'pinnedSpeaker': currentConfig?['pinnedSpeaker'],
       });
 

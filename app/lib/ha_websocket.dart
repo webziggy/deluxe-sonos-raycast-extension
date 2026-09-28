@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'station_config.dart';
 
 class HAWebSocket {
-  final Function(Map<String, dynamic>, bool isInitialSync) onTrackChange;
+  final Function(Map<String, dynamic>, bool isInitialSync, bool isNewTrack) onTrackChange;
   WebSocketChannel? _channel;
   String? _url;
   String? _token;
@@ -15,10 +15,12 @@ class HAWebSocket {
   int? _getStatesMsgId;
   Timer? _pingTimer;
   bool _awaitingPong = false;
+  final Map<int, Completer<dynamic>> _pendingRequests = {};
 
   final Map<String, String> _lastTracks = {};
   List<dynamic> rawStatesCache = [];
   Map<String, Map<String, String>> observedStations = {};
+  Map<String, List<Map<String, dynamic>>> nestedFavouritesCache = {};
 
   HAWebSocket({required this.onTrackChange});
 
@@ -96,6 +98,21 @@ class HAWebSocket {
       _awaitingPong = false;
       return;
     }
+    if (type == 'result' && data['id'] != null) {
+      final id = data['id'] as int;
+      if (_pendingRequests.containsKey(id)) {
+        if (data['success'] == true) {
+          _pendingRequests[id]!.complete(data['result']);
+        } else {
+          _pendingRequests[id]!.completeError(data['error'] ?? 'Unknown error');
+        }
+        _pendingRequests.remove(id);
+      }
+      if (id == _getStatesMsgId) {
+        _processStates(data['result'] as List<dynamic>);
+      }
+      return;
+    }
     
     if (type == 'auth_required') {
       _channel?.sink.add(jsonEncode({
@@ -153,6 +170,15 @@ class HAWebSocket {
       'id': _getStatesMsgId,
       'type': 'get_states',
     }));
+  }
+
+  Future<void> refreshFavourites(String entityId) async {
+    final sections = await getNestedFavourites(entityId);
+    if (sections.isNotEmpty) {
+      nestedFavouritesCache[entityId] = sections;
+      // We don't have a direct way to trigger UI refresh from here easily without a callback,
+      // but the next state change will pick it up.
+    }
   }
 
   void _handleEvent(Map<String, dynamic> event, bool isInitialSync) async {
@@ -367,7 +393,56 @@ class HAWebSocket {
     }
   }
 
-    void callService(String domain, String service, Map<String, dynamic> serviceData) {
+    Future<List<Map<String, dynamic>>> getNestedFavourites(String entityId) async {
+    if (!_isConnected || _channel == null) return [];
+    try {
+      final rootRes = await sendRequest('media_player/browse_media', {
+        'entity_id': entityId,
+        'media_content_type': 'favorites'
+      });
+      
+      final rootItems = (rootRes['children'] as List<dynamic>?) ?? [];
+      final folders = rootItems.where((i) => i['can_expand'] == true).toList();
+      final nonFolders = rootItems.where((i) => i['can_expand'] != true).toList();
+      
+      final sections = <Map<String, dynamic>>[];
+      if (nonFolders.isNotEmpty) {
+        sections.add({'title': 'Favourites', 'items': nonFolders});
+      }
+      
+      for (final folder in folders) {
+        try {
+          final folderRes = await sendRequest('media_player/browse_media', {
+            'entity_id': entityId,
+            'media_content_type': folder['media_content_type'],
+            'media_content_id': folder['media_content_id'],
+          });
+          final children = (folderRes['children'] as List<dynamic>?) ?? [];
+          if (children.isNotEmpty) {
+            sections.add({'title': folder['title'] ?? 'Folder', 'items': children});
+          }
+        } catch (e) {
+          print('Failed to fetch folder ${folder['title']}: $e');
+        }
+      }
+      return sections;
+    } catch (e) {
+      print('Failed to fetch favourites: $e');
+      return [];
+    }
+  }
+
+  Future<dynamic> sendRequest(String type, Map<String, dynamic> payload) {
+    final completer = Completer<dynamic>();
+    final id = _msgId++;
+    _pendingRequests[id] = completer;
+    
+    final message = {'id': id, 'type': type, ...payload};
+    _channel?.sink.add(jsonEncode(message));
+    return completer.future;
+  }
+
+  void callService(String domain, String service, Map<String, dynamic> serviceData) {
     if (_channel != null) {
       _channel!.sink.add(jsonEncode({
         'id': _msgId++,

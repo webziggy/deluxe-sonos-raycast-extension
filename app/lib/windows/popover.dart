@@ -66,7 +66,7 @@ class _PopoverSubWindowState extends State<PopoverSubWindow> {
     final pinnedSpeaker = _currentState?['pinnedSpeaker'] as String? ?? '';
     final speakers = List<Map>.from(_currentState?['speakers'] ?? []);
     final history = List<Map>.from(_currentState?['history'] ?? []);
-    final favourites = List<String>.from(_currentState?['favourites'] ?? []);
+    final favourites = List<Map>.from(_currentState?['favourites'] ?? []);
 
     final badgeUrl = trackData?['badgeUrl'] as String?;
     Widget artworkWidget = const Icon(Icons.music_note, size: 32, color: Colors.white54);
@@ -271,27 +271,40 @@ class _PopoverSubWindowState extends State<PopoverSubWindow> {
                     child: _showFavourites
                       ? (favourites.isEmpty 
                           ? const Center(child: Text('No Favourites found', style: TextStyle(color: Colors.white54, fontSize: 12)))
-                          : ListView.builder(
+                          : ListView(
                               padding: EdgeInsets.zero,
-                              itemCount: favourites.length,
-                              itemBuilder: (context, index) {
-                                final fav = favourites[index];
-                                return ListTile(
-                                  leading: const Icon(Icons.star, size: 16, color: Colors.amber),
-                                  title: Text(fav, style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                  dense: true,
-                                  visualDensity: VisualDensity.compact,
-                                  onTap: () {
-                                    if (pinnedSpeaker.isNotEmpty) {
-                                      WindowController.fromWindowId('0').invokeMethod('playback_action', {
-                                        'action': 'play_favourite', 
-                                        'entity_id': pinnedSpeaker,
-                                        'source': fav,
-                                      });
-                                    }
-                                  },
+                              children: favourites.map((section) {
+                                final title = section['title'] as String;
+                                final items = List<Map>.from(section['items'] ?? []);
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                      child: Text(title.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white54)),
+                                    ),
+                                    ...items.map((item) {
+                                      final itemName = item['title'] as String;
+                                      return ListTile(
+                                        leading: const Icon(Icons.star, size: 16, color: Colors.amber),
+                                        title: Text(itemName, style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        dense: true,
+                                        visualDensity: VisualDensity.compact,
+                                        onTap: () {
+                                          if (pinnedSpeaker.isNotEmpty) {
+                                            WindowController.fromWindowId('0').invokeMethod('playback_action', {
+                                              'action': 'play_media', 
+                                              'entity_id': pinnedSpeaker,
+                                              'media_content_type': item['media_content_type'],
+                                              'media_content_id': item['media_content_id'],
+                                            });
+                                          }
+                                        },
+                                      );
+                                    }).toList(),
+                                  ],
                                 );
-                              },
+                              }).toList(),
                             ))
                       : ListView.builder(
                           padding: EdgeInsets.zero,
