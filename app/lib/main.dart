@@ -36,7 +36,6 @@ Future<void> main(List<String> args) async {
     final argument = args[2].isEmpty ? <String, dynamic>{} : (jsonDecode(args[2]) as Map).cast<String, dynamic>();
     final windowType = argument['type'] as String?;
 
-    await windowManager.ensureInitialized();
 
     if (windowType == 'notification') {
       runApp(NotificationSubWindow(windowId: windowId, argument: argument));
@@ -198,6 +197,7 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
       if (call.method == 'show_main_window') {
         await windowManager.show();
         await windowManager.focus();
+        const MethodChannel('sonos_companion/platform').invokeMethod('activate_app');
         return;
       }
       if (call.method == 'quit_app') {
@@ -219,6 +219,14 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
           haWebSocket.callService('media_player', 'volume_up', {'entity_id': entityId});
         } else if (action == 'volume_down') {
           haWebSocket.callService('media_player', 'volume_down', {'entity_id': entityId});
+        } else if (action == 'set_volume') {
+          final level = args['volume_level'];
+          if (level != null) {
+            haWebSocket.callService('media_player', 'volume_set', {
+              'entity_id': entityId,
+              'volume_level': level,
+            });
+          }
         }
       }
     });
@@ -247,7 +255,7 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
       if (globalServer.trackHistory.isNotEmpty) {
               final currentConfig = await AppConfig.loadConfig();
       await _popoverWindow!.invokeMethod('update_state', {
-         'track': globalServer.trackHistory.first,
+         'track': globalServer.trackHistory.isNotEmpty ? globalServer.trackHistory.first : null,
          'history': globalServer.trackHistory,
          'speakers': haWebSocket.availableSpeakers,
          'pinnedSpeaker': currentConfig?['pinnedSpeaker'],
@@ -272,157 +280,183 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Sonos Desktop Settings'),
-          elevation: 0,
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      home: DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Sonos Desktop Settings'),
+            elevation: 0,
+            bottom: const TabBar(
+              tabs: [
+                Tab(text: 'Connection & API'),
+                Tab(text: 'Testing & Debug'),
+              ],
+            ),
+          ),
+          body: TabBarView(
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: _isConnected ? Colors.green : Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _isConnected ? 'Connected to Home Assistant' : 'Disconnected',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              const Text('Home Assistant WebSocket URL', style: TextStyle(color: Colors.white70)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _urlController,
-                decoration: const InputDecoration(
-                  hintText: 'ws://homeassistant.local:8123/api/websocket',
-                  border: OutlineInputBorder(),
-                  filled: true,
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text('Long-Lived Access Token', style: TextStyle(color: Colors.white70)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _tokenController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  hintText: 'eyJhbGciOiJIUzI1NiIsInR5cCI6...',
-                  border: OutlineInputBorder(),
-                  filled: true,
-                ),
-              ),
-              const SizedBox(height: 32),
-              const Text('Local Desktop API (For Raycast Extension)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 8),
-              const Text('Configure your Raycast Extension preferences with these credentials to allow it to communicate with the Desktop App.', style: TextStyle(color: Colors.white70)),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: TextFormField(
-                      controller: _localPortController,
-                      decoration: const InputDecoration(labelText: 'Local Port', border: OutlineInputBorder()),
-                      readOnly: true,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    flex: 3,
-                    child: TextFormField(
-                      controller: _localTokenController,
-                      obscureText: _obscureLocalToken,
-                      decoration: InputDecoration(
-                        labelText: 'Secret API Token',
-                        border: const OutlineInputBorder(),
-                        suffixIcon: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(_obscureLocalToken ? Icons.visibility : Icons.visibility_off),
-                              onPressed: () => setState(() => _obscureLocalToken = !_obscureLocalToken),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.refresh),
-                              tooltip: 'Regenerate Token',
-                              onPressed: () async {
-                                final newToken = const Uuid().v4();
-                                setState(() {
-                                  _localTokenController.text = newToken;
-                                  if (_localPortController.text.isEmpty) {
-                                    _localPortController.text = '9123';
-                                  }
-                                  _obscureLocalToken = false;
-                                });
-                                await AppConfig.saveLocalAuth(int.tryParse(_localPortController.text) ?? 9123, newToken);
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Token regenerated!')));
-                                }
-                              },
-                            ),
-                          ],
+              // TAB 1: General & API
+              SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: _isConnected ? Colors.green : Colors.red,
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                      readOnly: true,
+                        const SizedBox(width: 8),
+                        Text(
+                          _isConnected ? 'Connected to Home Assistant' : 'Disconnected',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 32),
+                    const Text('Home Assistant WebSocket URL', style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _urlController,
+                      decoration: const InputDecoration(
+                        hintText: 'ws://homeassistant.local:8123/api/websocket',
+                        border: OutlineInputBorder(),
+                        filled: true,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text('Long-Lived Access Token', style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _tokenController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        hintText: 'eyJhbGciOiJIUzI1NiIsInR5cCI6...',
+                        border: OutlineInputBorder(),
+                        filled: true,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    const Text('Local Desktop API (For Raycast Extension)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 8),
+                    const Text('Configure your Raycast Extension preferences with these credentials to allow it to communicate with the Desktop App.', style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 1,
+                          child: TextFormField(
+                            controller: _localPortController,
+                            decoration: const InputDecoration(labelText: 'Local Port', border: OutlineInputBorder()),
+                            readOnly: true,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 3,
+                          child: TextFormField(
+                            controller: _localTokenController,
+                            obscureText: _obscureLocalToken,
+                            decoration: InputDecoration(
+                              labelText: 'Secret API Token',
+                              border: const OutlineInputBorder(),
+                              suffixIcon: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(_obscureLocalToken ? Icons.visibility : Icons.visibility_off),
+                                    onPressed: () => setState(() => _obscureLocalToken = !_obscureLocalToken),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.refresh),
+                                    tooltip: 'Regenerate Token',
+                                    onPressed: () async {
+                                      final newToken = const Uuid().v4();
+                                      setState(() {
+                                        _localTokenController.text = newToken;
+                                        if (_localPortController.text.isEmpty) {
+                                          _localPortController.text = '9123';
+                                        }
+                                        _obscureLocalToken = false;
+                                      });
+                                      await AppConfig.saveLocalAuth(int.tryParse(_localPortController.text) ?? 9123, newToken);
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Token regenerated!')));
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            readOnly: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await AppConfig.saveConfig(_urlController.text, _tokenController.text);
+                          haWebSocket.connect(_urlController.text, _tokenController.text);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Configuration saved! Reconnecting...')),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                        ),
+                        child: const Text('Save & Connect', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (_notificationWindowId != null) {
-                        try {
-                          await WindowController.fromWindowId(_notificationWindowId!).invokeMethod('update_track', {
-                            'track': 'Test Track ${DateTime.now().second}',
+              
+              // TAB 2: Testing
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Notification Tester', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 8),
+                    const Text('Trigger a dummy track change notification to test the UI layout and sizing.', style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (_notificationWindowId != null) {
+                          try {
+                            await WindowController.fromWindowId(_notificationWindowId!).invokeMethod('update_track', {
+                              'track': 'Test Track ${DateTime.now().second}',
+                              'artist': 'Test Artist',
+                              'speaker': 'Test Speaker',
+                            });
+                          } catch (_) {}
+                        } else {
+                          final window = await WindowController.create(WindowConfiguration(arguments: jsonEncode({
+                            'type': 'notification',
+                            'track': 'Test Track',
                             'artist': 'Test Artist',
                             'speaker': 'Test Speaker',
-                          });
-                        } catch (_) {}
-                      } else {
-                        final window = await WindowController.create(WindowConfiguration(arguments: jsonEncode({
-                          'type': 'notification',
-                          'track': 'Test Track',
-                          'artist': 'Test Artist',
-                          'speaker': 'Test Speaker',
-                        })));
-                        _notificationWindowId = window.windowId.toString();
-                        window.show();
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade800),
-                    child: const Text('Test Notification'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      await AppConfig.saveConfig(_urlController.text, _tokenController.text);
-                      haWebSocket.connect(_urlController.text, _tokenController.text);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Configuration saved! Reconnecting...')),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          })));
+                          _notificationWindowId = window.windowId.toString();
+                          window.show();
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade800),
+                      child: const Text('Test Notification'),
                     ),
-                    child: const Text('Save & Connect', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -431,8 +465,6 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
     );
   }
 }
-
-
 
 class NotificationSubWindow extends StatefulWidget {
   final String windowId;

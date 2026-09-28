@@ -10,6 +10,19 @@ class AppDelegate: FlutterAppDelegate {
   override func applicationDidFinishLaunching(_ notification: Notification) {
     if let flutterViewController = NSApplication.shared.windows.first?.contentViewController as? FlutterViewController {
       methodChannel = FlutterMethodChannel(name: "sonos_companion/media_keys", binaryMessenger: flutterViewController.engine.binaryMessenger)
+      
+      let platformChannel = FlutterMethodChannel(name: "sonos_companion/platform", binaryMessenger: flutterViewController.engine.binaryMessenger)
+      platformChannel.setMethodCallHandler { (call, result) in
+        if call.method == "activate_app" {
+          NSApp.activate(ignoringOtherApps: true)
+          if let window = NSApplication.shared.windows.first {
+            window.makeKeyAndOrderFront(nil)
+          }
+          result(nil)
+        } else {
+          result(FlutterMethodNotImplemented)
+        }
+      }
     }
     setupMediaKeys()
     super.applicationDidFinishLaunching(notification)
