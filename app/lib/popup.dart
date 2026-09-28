@@ -9,6 +9,7 @@ class NotificationPopup extends StatefulWidget {
   final String alignment;
   final String cardSize;
   final String fontFamily;
+  final VoidCallback? onCloseFinished;
 
   const NotificationPopup({
     super.key, 
@@ -16,6 +17,7 @@ class NotificationPopup extends StatefulWidget {
     required this.alignment,
     required this.cardSize,
     required this.fontFamily,
+    this.onCloseFinished,
   });
 
   @override
@@ -99,6 +101,7 @@ class _NotificationPopupState extends State<NotificationPopup> with SingleTicker
     _hideTimer?.cancel();
     _hideTimer = Timer(const Duration(seconds: 5), () async {
       await _animController.reverse();
+      widget.onCloseFinished?.call();
     });
   }
 
