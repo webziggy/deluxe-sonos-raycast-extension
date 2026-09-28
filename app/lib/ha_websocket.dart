@@ -21,7 +21,23 @@ class HAWebSocket {
 
   HAWebSocket({required this.onTrackChange});
 
+  List<Map<String, String>> get availableSpeakers {
+    final speakers = <Map<String, String>>[];
+    for (final state in rawStatesCache) {
+      final entityId = state['entity_id'] as String? ?? '';
+      // A simple heuristic for Sonos/media speakers in HA
+      if (entityId.startsWith('media_player.')) {
+        final friendlyName = state['attributes']?['friendly_name']?.toString() ?? entityId;
+        speakers.add({'id': entityId, 'name': friendlyName});
+      }
+    }
+    // Sort alphabetically
+    speakers.sort((a, b) => a['name']!.compareTo(b['name']!));
+    return speakers;
+  }
+
   void connect(String url, String token) {
+
     _url = url;
     _token = token;
     _connectInternal();
