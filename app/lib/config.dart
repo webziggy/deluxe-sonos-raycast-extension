@@ -76,4 +76,8 @@ class AppConfig {
   static Future<void> savePinnedSpeaker(String? speaker) async {
     await _updateAndSave({'pinnedSpeaker': speaker});
   }
+
+  static Future<void> saveLocalAuth(int port, String token) async {
+    await _updateAndSave({'localPort': port, 'localToken': token});
+  }
 }

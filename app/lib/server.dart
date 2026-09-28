@@ -41,7 +41,12 @@ class LocalServer {
   LocalServer({required this.onConfigUpdate});
 
   Future<void> start() async {
-    _secretToken = Uuid().v4();
+    final config = await AppConfig.loadConfig();
+    int port = config?['localPort'] ?? 9123;
+    _secretToken = config?['localToken'] ?? Uuid().v4();
+    if (config?['localToken'] == null) {
+      await AppConfig.saveLocalAuth(port, _secretToken);
+    }
 
     final router = Router();
 

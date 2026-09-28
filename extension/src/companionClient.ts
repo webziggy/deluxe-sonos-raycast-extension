@@ -1,7 +1,22 @@
 import { LocalStorage } from "@raycast/api";
-import fs from "fs";
-import os from "os";
-import path from "path";
+import { getPreferenceValues } from "@raycast/api";
+
+interface Preferences {
+  localPort: string;
+  localToken: string;
+}
+
+interface CompanionAuth {
+  port: number;
+  token: string;
+}
+
+/**
+ * Retrieves connection and authentication details for the Companion App
+ * from the Raycast user preferences.
+ */
+
+
 
 interface CompanionAuth {
   port: number;
