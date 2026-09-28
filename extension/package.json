@@ -12,12 +12,6 @@
   "license": "MIT",
   "commands": [
     {
-      "name": "index",
-      "title": "Sonos Menu",
-      "description": "Sonos Menu Bar Controller",
-      "mode": "menu-bar"
-    },
-    {
       "name": "favourites",
       "title": "Sonos Favourites",
       "description": "Browse and play Sonos favourites",
