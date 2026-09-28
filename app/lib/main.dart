@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:tray_manager/tray_manager.dart';
@@ -38,11 +39,10 @@ Future<void> main(List<String> args) async {
       runApp(PopoverSubWindow(windowId: windowId, argument: argument));
     }
   } else {
-        // 0. Load Configuration
+    // 0. Load Configuration
     final config = await AppConfig.loadConfig();
     
     // 1. Initialize HA WebSocket and local server in the MAIN window
-  
     haWebSocket = HAWebSocket(onTrackChange: (trackData, isInitialSync) async {
       final trackName = trackData['track'] ?? 'Unknown Track';
       final speakerName = trackData['speaker'] ?? 'Unknown Speaker';
@@ -61,12 +61,11 @@ Future<void> main(List<String> args) async {
       // TODO: Spawn notification window if isInitialSync == false
     });
     
-        final haUrl = config?['haUrl'] as String?;
+    final haUrl = config?['haUrl'] as String?;
     final haToken = config?['haToken'] as String?;
     if (haUrl != null && haToken != null) {
       haWebSocket.connect(haUrl, haToken);
     }
-  
     
     globalServer = LocalServer(onConfigUpdate: (newUrl, newToken) async {
       print('Received HA config from Raycast. Saving and connecting...');
@@ -74,7 +73,6 @@ Future<void> main(List<String> args) async {
       haWebSocket.connect(newUrl, newToken);
     });
     globalServer.getDebugStates = () => haWebSocket.rawStatesCache;
-    
     
     await globalServer.start();
 
@@ -91,11 +89,38 @@ class MainAppWindow extends StatefulWidget {
 
 class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
   bool _isPopoverVisible = false;
+  
+  final _urlController = TextEditingController();
+  final _tokenController = TextEditingController();
+  bool _isConnected = false;
 
   @override
   void initState() {
     super.initState();
     _initSystemTray();
+    _loadConfig();
+    _checkConnectionStatus();
+  }
+  
+  Future<void> _loadConfig() async {
+    final config = await AppConfig.loadConfig();
+    setState(() {
+      _urlController.text = config?['haUrl'] as String? ?? '';
+      _tokenController.text = config?['haToken'] as String? ?? '';
+    });
+  }
+
+  void _checkConnectionStatus() {
+    // Periodically check if WebSocket is connected
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          // A bit hacky, but we check if we have received any states
+          _isConnected = haWebSocket.rawStatesCache.isNotEmpty;
+        });
+        _checkConnectionStatus();
+      }
+    });
   }
 
   Future<void> _initSystemTray() async {
@@ -134,6 +159,8 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
   @override
   void dispose() {
     trayManager.removeListener(this);
+    _urlController.dispose();
+    _tokenController.dispose();
     super.dispose();
   }
 
@@ -141,15 +168,87 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark(),
       home: Scaffold(
-        appBar: AppBar(title: const Text('Sonos Settings')),
-        body: Center(
-          child: ElevatedButton(
-            onPressed: () async {
-              final window = await WindowController.create(WindowConfiguration(arguments: jsonEncode({'type': 'notification'})));
-              window.show();
-            },
-            child: const Text('Test Spawn Notification Window'),
+        appBar: AppBar(
+          title: const Text('Sonos Desktop Settings'),
+          elevation: 0,
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: _isConnected ? Colors.green : Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _isConnected ? 'Connected to Home Assistant' : 'Disconnected',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              const Text('Home Assistant WebSocket URL', style: TextStyle(color: Colors.white70)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _urlController,
+                decoration: const InputDecoration(
+                  hintText: 'ws://homeassistant.local:8123/api/websocket',
+                  border: OutlineInputBorder(),
+                  filled: true,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text('Long-Lived Access Token', style: TextStyle(color: Colors.white70)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _tokenController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  hintText: 'eyJhbGciOiJIUzI1NiIsInR5cCI6...',
+                  border: OutlineInputBorder(),
+                  filled: true,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton(
+                    onPressed: () async {
+                      final window = await WindowController.create(WindowConfiguration(arguments: jsonEncode({'type': 'notification'})));
+                      window.show();
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade800),
+                    child: const Text('Test Notification'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      await AppConfig.saveConfig(_urlController.text, _tokenController.text);
+                      haWebSocket.connect(_urlController.text, _tokenController.text);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Configuration saved! Reconnecting...')),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    ),
+                    child: const Text('Save & Connect', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -254,7 +353,6 @@ class _PopoverSubWindowState extends State<PopoverSubWindow> {
     final speakerName = _currentTrack?['speaker'] ?? 'No Speaker Selected';
     final artUrl = _currentTrack?['artUrl'] as String?;
     
-    // Some logic to parse out the base64 or url for artwork
     Widget artworkWidget = const Center(child: Icon(Icons.music_note, size: 64, color: Colors.white54));
     
     if (artUrl != null && artUrl.isNotEmpty) {
