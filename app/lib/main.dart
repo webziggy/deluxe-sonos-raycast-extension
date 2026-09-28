@@ -182,6 +182,10 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
         _notificationWindowId = null;
         return;
       }
+      if (call.method == 'popover_closed') {
+        _isPopoverVisible = false;
+        return;
+      }
       if (call.method == 'set_pinned_speaker') {
         final entityId = call.arguments['entity_id'] as String;
         await AppConfig.savePinnedSpeaker(entityId);

@@ -14,7 +14,7 @@ class PopoverSubWindow extends StatefulWidget {
   State<PopoverSubWindow> createState() => _PopoverSubWindowState();
 }
 
-class _PopoverSubWindowState extends State<PopoverSubWindow> {
+class _PopoverSubWindowState extends State<PopoverSubWindow> with WindowListener {
   static const double popoverWidth = 320.0;
   static const double popoverHeight = 480.0;
   
@@ -25,6 +25,7 @@ class _PopoverSubWindowState extends State<PopoverSubWindow> {
   @override
   void initState() {
     super.initState();
+    windowManager.addListener(this);
     _initWindow();
     
     WindowController.fromWindowId(widget.windowId).setWindowMethodHandler((call) async {
@@ -50,6 +51,19 @@ class _PopoverSubWindowState extends State<PopoverSubWindow> {
     await windowManager.setSize(const Size(popoverWidth, popoverHeight));
     await windowManager.setAsFrameless();
     await windowManager.setHasShadow(false);
+  }
+
+  @override
+  void dispose() {
+    windowManager.removeListener(this);
+    super.dispose();
+  }
+
+  @override
+  void onWindowBlur() {
+    // Hide popover when user clicks away
+    windowManager.hide();
+    WindowController.fromWindowId('0').invokeMethod('popover_closed');
   }
 
   @override
