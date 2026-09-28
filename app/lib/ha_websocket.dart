@@ -439,6 +439,17 @@ class HAWebSocket {
     
     final message = {'id': id, 'type': type, ...payload};
     _channel?.sink.add(jsonEncode(message));
+    
+    // Cleanup if Home Assistant never responds
+    Future.delayed(const Duration(seconds: 10), () {
+      if (_pendingRequests.containsKey(id)) {
+        if (!completer.isCompleted) {
+          completer.completeError('Timeout waiting for HA response');
+        }
+        _pendingRequests.remove(id);
+      }
+    });
+    
     return completer.future;
   }
 
