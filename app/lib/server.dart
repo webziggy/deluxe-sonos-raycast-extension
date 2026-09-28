@@ -71,11 +71,17 @@ class LocalServer {
     });
 
     router.get('/debug_states', (Request request) {
+      final auth = request.headers['authorization'];
+      if (auth != 'Bearer $_secretToken') return Response.forbidden('Invalid or missing token');
+      
       final states = getDebugStates?.call() ?? [];
       return Response.ok(jsonEncode(states), headers: {'Content-Type': 'application/json'});
     });
 
     router.get('/observed_stations', (Request request) {
+      final auth = request.headers['authorization'];
+      if (auth != 'Bearer $_secretToken') return Response.forbidden('Invalid or missing token');
+      
       final stations = getObservedStations?.call() ?? {};
       return Response.ok(jsonEncode(stations), headers: {'Content-Type': 'application/json'});
     });
