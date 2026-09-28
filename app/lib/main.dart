@@ -282,6 +282,9 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
                                 final newToken = const Uuid().v4();
                                 setState(() {
                                   _localTokenController.text = newToken;
+                                  if (_localPortController.text.isEmpty) {
+                                    _localPortController.text = '9123';
+                                  }
                                   _obscureLocalToken = false;
                                 });
                                 await AppConfig.saveLocalAuth(int.tryParse(_localPortController.text) ?? 9123, newToken);
