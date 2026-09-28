@@ -126,6 +126,27 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
   Future<void> _initSystemTray() async {
     await trayManager.setIcon('assets/app_iconTemplate.png');
     trayManager.addListener(this);
+    
+    // Listen for commands from the Popover Window
+    WindowController.fromWindowId('0').setWindowMethodHandler((call) async {
+      if (call.method == 'playback_action') {
+        final args = call.arguments as Map;
+        final action = args['action'] as String;
+        final entityId = args['entity_id'] as String;
+        
+        if (action == 'play_pause') {
+          haWebSocket.callService('media_player', 'media_play_pause', {'entity_id': entityId});
+        } else if (action == 'next') {
+          haWebSocket.callService('media_player', 'media_next_track', {'entity_id': entityId});
+        } else if (action == 'previous') {
+          haWebSocket.callService('media_player', 'media_previous_track', {'entity_id': entityId});
+        } else if (action == 'volume_up') {
+          haWebSocket.callService('media_player', 'volume_up', {'entity_id': entityId});
+        } else if (action == 'volume_down') {
+          haWebSocket.callService('media_player', 'volume_down', {'entity_id': entityId});
+        }
+      }
+    });
   }
 
   @override
@@ -350,7 +371,11 @@ class _PopoverSubWindowState extends State<PopoverSubWindow> {
   Widget build(BuildContext context) {
     final trackName = _currentTrack?['track'] ?? 'Not Playing';
     final artistName = _currentTrack?['artist'] ?? '';
-    final speakerName = _currentTrack?['speaker'] ?? 'No Speaker Selected';
+        final speakerName = _currentTrack?['speaker'] ?? 'No Speaker Selected';
+    final entityId = _currentTrack?['entityId'] as String? ?? '';
+    final state = _currentTrack?['state'] as String? ?? 'paused';
+    final isPlaying = state == 'playing';
+  
     final artUrl = _currentTrack?['artUrl'] as String?;
     
     Widget artworkWidget = const Center(child: Icon(Icons.music_note, size: 64, color: Colors.white54));
@@ -431,9 +456,28 @@ class _PopoverSubWindowState extends State<PopoverSubWindow> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  IconButton(icon: const Icon(Icons.skip_previous), onPressed: () {}),
-                  IconButton(icon: const Icon(Icons.play_arrow, size: 32), onPressed: () {}),
-                  IconButton(icon: const Icon(Icons.skip_next), onPressed: () {}),
+                  IconButton(
+                    icon: const Icon(Icons.volume_down), 
+                    onPressed: entityId.isEmpty ? null : () => WindowController.fromWindowId('0').invokeMethod('playback_action', {'action': 'volume_down', 'entity_id': entityId}),
+                  ),
+                  const SizedBox(width: 16),
+                  IconButton(
+                    icon: const Icon(Icons.skip_previous), 
+                    onPressed: entityId.isEmpty ? null : () => WindowController.fromWindowId('0').invokeMethod('playback_action', {'action': 'previous', 'entity_id': entityId}),
+                  ),
+                  IconButton(
+                    icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow, size: 36), 
+                    onPressed: entityId.isEmpty ? null : () => WindowController.fromWindowId('0').invokeMethod('playback_action', {'action': 'play_pause', 'entity_id': entityId}),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.skip_next), 
+                    onPressed: entityId.isEmpty ? null : () => WindowController.fromWindowId('0').invokeMethod('playback_action', {'action': 'next', 'entity_id': entityId}),
+                  ),
+                  const SizedBox(width: 16),
+                  IconButton(
+                    icon: const Icon(Icons.volume_up), 
+                    onPressed: entityId.isEmpty ? null : () => WindowController.fromWindowId('0').invokeMethod('playback_action', {'action': 'volume_up', 'entity_id': entityId}),
+                  ),
                 ],
               ),
               const SizedBox(height: 20),

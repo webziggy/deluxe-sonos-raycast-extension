@@ -311,11 +311,24 @@ class HAWebSocket {
           'track': trackString,
           'speaker': friendlyName,
           'entityId': entityId,
+          'state': state,
           'artUrl': artUrl,
           'badgeUrl': badgeUrl,
           'haToken': _token,
         }, isInitialSync);
       }
+    }
+  }
+
+    void callService(String domain, String service, Map<String, dynamic> serviceData) {
+    if (_channel != null) {
+      _channel!.sink.add(jsonEncode({
+        'id': _msgId++,
+        'type': 'call_service',
+        'domain': domain,
+        'service': service,
+        'service_data': serviceData,
+      }));
     }
   }
 
