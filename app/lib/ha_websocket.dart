@@ -181,7 +181,23 @@ class HAWebSocket {
     }
   }
 
+  void _processStates(List<dynamic> states) {
+    rawStatesCache = states;
+    for (var stateObj in states) {
+      if (stateObj['entity_id'].toString().startsWith('media_player.')) {
+        _handleEvent({
+          'event_type': 'state_changed',
+          'data': {
+            'entity_id': stateObj['entity_id'],
+            'new_state': stateObj
+          }
+        }, true);
+      }
+    }
+  }
+
   void _handleEvent(Map<String, dynamic> event, bool isInitialSync) async {
+
     if (event['event_type'] != 'state_changed') return;
     
     final data = event['data'];
@@ -388,7 +404,7 @@ class HAWebSocket {
           'artUrl': artUrl,
           'badgeUrl': badgeUrl,
           'haToken': _token,
-        }, isInitialSync);
+        }, isInitialSync, isNewTrack);
       }
     }
   }
