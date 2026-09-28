@@ -173,7 +173,7 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
   }
 
   Future<void> _initSystemTray() async {
-    await trayManager.setIcon('assets/app_iconTemplate.png');
+    await trayManager.setIcon('assets/app_iconTemplate.png', isTemplate: true);
     trayManager.addListener(this);
     
     // Listen for commands from the Popover Window
