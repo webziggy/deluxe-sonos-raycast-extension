@@ -111,6 +111,8 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
     setState(() {
       _urlController.text = config?['haUrl'] as String? ?? '';
       _tokenController.text = config?['haToken'] as String? ?? '';
+      _localPortController.text = (config?['localPort'] ?? 9123).toString();
+      _localTokenController.text = config?['localToken'] as String? ?? '';
     });
   }
 
