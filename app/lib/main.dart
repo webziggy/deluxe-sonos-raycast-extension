@@ -1,12 +1,29 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:tray_manager/tray_manager.dart';
-import 'package:flutter/services.dart';
+
+import 'server.dart';
+import 'ha_websocket.dart';
+import 'config.dart';
+
+late LocalServer globalServer;
+late HAWebSocket haWebSocket;
+WindowController? _popoverWindow;
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  }
+}
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  HttpOverrides.global = MyHttpOverrides();
 
   if (args.isNotEmpty && args.first == 'multi_window') {
     final windowId = args[1];
@@ -21,6 +38,46 @@ Future<void> main(List<String> args) async {
       runApp(PopoverSubWindow(windowId: windowId, argument: argument));
     }
   } else {
+        // 0. Load Configuration
+    final config = await AppConfig.loadConfig();
+    
+    // 1. Initialize HA WebSocket and local server in the MAIN window
+  
+    haWebSocket = HAWebSocket(onTrackChange: (trackData, isInitialSync) async {
+      final trackName = trackData['track'] ?? 'Unknown Track';
+      final speakerName = trackData['speaker'] ?? 'Unknown Speaker';
+      
+      // Update the local history array (for the Raycast HTTP API)
+      globalServer.trackHistory.insert(0, trackData);
+      if (globalServer.trackHistory.length > 10) {
+        globalServer.trackHistory.removeLast();
+      }
+
+      // If the Popover window exists, send the new track data via IPC
+      if (_popoverWindow != null) {
+        await _popoverWindow!.invokeMethod('update_track', trackData);
+      }
+
+      // TODO: Spawn notification window if isInitialSync == false
+    });
+    
+        final haUrl = config?['haUrl'] as String?;
+    final haToken = config?['haToken'] as String?;
+    if (haUrl != null && haToken != null) {
+      haWebSocket.connect(haUrl, haToken);
+    }
+  
+    
+    globalServer = LocalServer(onConfigUpdate: (newUrl, newToken) async {
+      print('Received HA config from Raycast. Saving and connecting...');
+      await AppConfig.saveConfig(newUrl, newToken);
+      haWebSocket.connect(newUrl, newToken);
+    });
+    globalServer.getDebugStates = () => haWebSocket.rawStatesCache;
+    
+    
+    await globalServer.start();
+
     runApp(const MainAppWindow());
   }
 }
@@ -33,7 +90,6 @@ class MainAppWindow extends StatefulWidget {
 }
 
 class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
-  WindowController? _popoverWindow;
   bool _isPopoverVisible = false;
 
   @override
@@ -49,7 +105,6 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
 
   @override
   void onTrayIconMouseDown() async {
-    // 1. Get the exact bounds of the system tray icon
     final trayBounds = await trayManager.getBounds();
     final trayX = trayBounds?.left ?? 0;
     final trayY = trayBounds?.bottom ?? 0;
@@ -63,11 +118,14 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
       await _popoverWindow!.hide();
       _isPopoverVisible = false;
     } else {
-      // 2. Tell the popover to reposition itself before showing
       await _popoverWindow!.invokeMethod('align_to_tray', {
         'tray_center_x': trayCenter,
         'tray_bottom_y': trayY,
       });
+      // Send the most recent track data to populate the popover immediately
+      if (globalServer.trackHistory.isNotEmpty) {
+        await _popoverWindow!.invokeMethod('update_track', globalServer.trackHistory.first);
+      }
       await _popoverWindow!.show();
       _isPopoverVisible = true;
     }
@@ -156,22 +214,28 @@ class PopoverSubWindow extends StatefulWidget {
 class _PopoverSubWindowState extends State<PopoverSubWindow> {
   static const double popoverWidth = 320.0;
   static const double popoverHeight = 450.0;
+  
+  Map<String, dynamic>? _currentTrack;
 
   @override
   void initState() {
     super.initState();
     _initWindow();
     
-    WindowController.fromWindowId(widget.windowId).setWindowMethodHandler((MethodCall call) async {
+    WindowController.fromWindowId(widget.windowId).setWindowMethodHandler((call) async {
       if (call.method == 'align_to_tray') {
         final args = call.arguments as Map;
         final trayCenterX = (args['tray_center_x'] as num).toDouble();
         final trayBottomY = (args['tray_bottom_y'] as num).toDouble();
         
         final x = trayCenterX - (popoverWidth / 2);
-        final y = trayBottomY + 5; // Slight padding below the menu bar
+        final y = trayBottomY + 5;
         
         await windowManager.setPosition(Offset(x, y));
+      } else if (call.method == 'update_track') {
+        setState(() {
+          _currentTrack = Map<String, dynamic>.from(call.arguments as Map);
+        });
       }
     });
   }
@@ -185,6 +249,34 @@ class _PopoverSubWindowState extends State<PopoverSubWindow> {
 
   @override
   Widget build(BuildContext context) {
+    final trackName = _currentTrack?['track'] ?? 'Not Playing';
+    final artistName = _currentTrack?['artist'] ?? '';
+    final speakerName = _currentTrack?['speaker'] ?? 'No Speaker Selected';
+    final artUrl = _currentTrack?['artUrl'] as String?;
+    
+    // Some logic to parse out the base64 or url for artwork
+    Widget artworkWidget = const Center(child: Icon(Icons.music_note, size: 64, color: Colors.white54));
+    
+    if (artUrl != null && artUrl.isNotEmpty) {
+      if (artUrl.startsWith('data:image')) {
+        final base64String = artUrl.split(',').last;
+        artworkWidget = Image.memory(
+          base64Decode(base64String),
+          width: 280,
+          height: 280,
+          fit: BoxFit.cover,
+        );
+      } else {
+        artworkWidget = Image.network(
+          artUrl,
+          width: 280,
+          height: 280,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.error, size: 64, color: Colors.white54)),
+        );
+      }
+    }
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
@@ -208,22 +300,36 @@ class _PopoverSubWindowState extends State<PopoverSubWindow> {
           child: Column(
             children: [
               const SizedBox(height: 20),
-              // Album Art Placeholder
-              Container(
-                width: 280,
-                height: 280,
-                decoration: BoxDecoration(
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 280,
+                  height: 280,
                   color: Colors.black26,
-                  borderRadius: BorderRadius.circular(8),
+                  child: artworkWidget,
                 ),
-                child: const Center(child: Icon(Icons.music_note, size: 64, color: Colors.white54)),
               ),
               const SizedBox(height: 16),
-              // Track Info Placeholder
-              const Text('Not Playing', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const Text('No Speaker Selected', style: TextStyle(fontSize: 12, color: Colors.white70)),
+              Text(
+                trackName, 
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (artistName.isNotEmpty) 
+                Text(
+                  artistName, 
+                  style: const TextStyle(fontSize: 14, color: Colors.white70),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              Text(
+                speakerName, 
+                style: const TextStyle(fontSize: 12, color: Colors.white54),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               const Spacer(),
-              // Controls Placeholder
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
