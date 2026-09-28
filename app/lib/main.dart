@@ -93,6 +93,9 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
   
   final _urlController = TextEditingController();
   final _tokenController = TextEditingController();
+  final _localPortController = TextEditingController();
+  final _localTokenController = TextEditingController();
+  bool _obscureLocalToken = true;
   bool _isConnected = false;
 
   @override
@@ -240,6 +243,60 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
                   border: OutlineInputBorder(),
                   filled: true,
                 ),
+              ),
+              const SizedBox(height: 32),
+              const Text('Local Desktop API (For Raycast Extension)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 8),
+              const Text('Configure your Raycast Extension preferences with these credentials to allow it to communicate with the Desktop App.', style: TextStyle(color: Colors.white70)),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: TextFormField(
+                      controller: _localPortController,
+                      decoration: const InputDecoration(labelText: 'Local Port', border: OutlineInputBorder()),
+                      readOnly: true,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 3,
+                    child: TextFormField(
+                      controller: _localTokenController,
+                      obscureText: _obscureLocalToken,
+                      decoration: InputDecoration(
+                        labelText: 'Secret API Token',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(_obscureLocalToken ? Icons.visibility : Icons.visibility_off),
+                              onPressed: () => setState(() => _obscureLocalToken = !_obscureLocalToken),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.refresh),
+                              tooltip: 'Regenerate Token',
+                              onPressed: () async {
+                                final newToken = const Uuid().v4();
+                                setState(() {
+                                  _localTokenController.text = newToken;
+                                  _obscureLocalToken = false;
+                                });
+                                await AppConfig.saveLocalAuth(int.tryParse(_localPortController.text) ?? 9123, newToken);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Token regenerated!')));
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      readOnly: true,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 32),
               Row(
