@@ -8,7 +8,7 @@ Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
   if (args.isNotEmpty && args.first == 'multi_window') {
-    final windowId = int.parse(args[1]);
+    final windowId = args[1];
     final argument = args[2].isEmpty ? <String, dynamic>{} : (jsonDecode(args[2]) as Map).cast<String, dynamic>();
     final windowType = argument['type'] as String?;
 
@@ -43,10 +43,24 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
     trayManager.addListener(this);
   }
 
+  WindowController? _popoverWindow;
+  bool _isPopoverVisible = false;
+
   @override
   void onTrayIconMouseDown() async {
-    final window = await WindowController.create(WindowConfiguration(arguments: jsonEncode({'type': 'popover'})));
-    window.show();
+    if (_popoverWindow == null) {
+      _popoverWindow = await WindowController.create(WindowConfiguration(arguments: jsonEncode({'type': 'popover'})));
+      await _popoverWindow!.show();
+      _isPopoverVisible = true;
+    } else {
+      if (_isPopoverVisible) {
+        await _popoverWindow!.hide();
+        _isPopoverVisible = false;
+      } else {
+        await _popoverWindow!.show();
+        _isPopoverVisible = true;
+      }
+    }
   }
 
   @override
@@ -75,7 +89,7 @@ class _MainAppWindowState extends State<MainAppWindow> with TrayListener {
 }
 
 class NotificationSubWindow extends StatefulWidget {
-  final int windowId;
+  final String windowId;
   final Map<String, dynamic> argument;
 
   const NotificationSubWindow({super.key, required this.windowId, required this.argument});
@@ -119,7 +133,7 @@ class _NotificationSubWindowState extends State<NotificationSubWindow> {
 }
 
 class PopoverSubWindow extends StatefulWidget {
-  final int windowId;
+  final String windowId;
   final Map<String, dynamic> argument;
 
   const PopoverSubWindow({super.key, required this.windowId, required this.argument});
